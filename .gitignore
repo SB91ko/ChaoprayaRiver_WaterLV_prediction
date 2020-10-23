@@ -1254,3 +1254,10 @@ data/hii-telemetering-batch-data-master/water-level2007-2020/YOM009.csv
 data/hii-telemetering-batch-data-master/water-level2007-2020/YOM010.csv
 data/hii-telemetering-batch-data-master/water-level2007-2020/YOM011.csv
 data/hii-telemetering-batch-data-master/water-level2007-2020/YOM012.csv
+data/instant_data/rain.csv
+data/instant_data/water.csv
+data/.ipynb_checkpoints/Lazy-compress-checkpoint.ipynb
+DLtools/__pycache__/__init__.cpython-38.pyc
+DLtools/__pycache__/LSTMmodel.cpython-38.pyc
+DLtools/__pycache__/prep_data.cpython-38.pyc
+.gitignore
