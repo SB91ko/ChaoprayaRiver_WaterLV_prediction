@@ -118,6 +118,9 @@ class instant_df:
 # rain = 'data/instant_data/rain_small.csv'
 # water = 'data/instant_data/water_small.csv'
 # rw = instant_df(water,rain,start='2013-01-01',stop='2020-01-01')
+
 # df = rw.df
-# # df.interpolate(limit=30,inplace=True)
-# print(rw.report_missing_by_station())
+# df.interpolate(limit=3,inplace=True)
+# col = rw.report_missing_by_station()
+
+# print(df[col].head())
