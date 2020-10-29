@@ -1,4 +1,4 @@
-from numpy.lib.shape_base import column_stack
+# from numpy.lib.shape_base import column_stack
 import pandas as pd
 import re, glob, os
 import numpy as np
@@ -42,23 +42,22 @@ class merge_df:
                 df_dummy = df_dummy.join(group.set_index('date')[[type]].rename(columns={type:name}))
         return df_dummy
 
-
 class instant_df:
     def __init__(self,water_csv,rain_csv,start=None,stop=None):
         self.water_csv = water_csv
         self.rain_csv = rain_csv
         self.start = start
         self.stop = stop
-
-        self.water_df = self.df_maker(water_csv,'_w')
-        self.rain_df = self.df_maker(rain_csv,'_r')
-
-        self.df = self.rain_water_merge(self.water_df,self.rain_df)
         self.rain_st_df = None
         self.water_st_df = None
 
-        self.rain_scaler = None
-        self.water_scaler = None
+        self.water_df = self.df_maker(water_csv,'_w')
+        self.rain_df = self.df_maker(rain_csv,'_r')
+        self.col_water,self.col_rain = self.only_related()
+        self.df = self.rain_water_merge(self.water_df.resample('d').mean(),self.rain_df)
+        #self.useful_col = self.report_missing_by_station()
+        # self.rain_scaler = None
+        # self.water_scaler = None
 
     def df_maker(self,csvfile,syn=''):
         df = pd.read_csv(csvfile,index_col=['date'],parse_dates=['date'])
@@ -66,8 +65,7 @@ class instant_df:
         return df[self.start:self.stop]
 
     def rain_water_merge(self,water,rain):
-        col_water,col_rain = self.only_related()
-        return pd.concat([water[col_water],rain[col_rain]])
+        return pd.concat([water[self.col_water],rain[self.col_rain]])
 
     def only_related(self):
         filepath = ("data/hii-telemetering-batch-data-master/")
@@ -87,6 +85,29 @@ class instant_df:
         col_rain = intersection(col_rain,rain_station)
         return col_water,col_rain
 
+    def report_missing_by_year(self):
+        # Percent of missing data
+        def count_miss(df):
+            for from_yr in range(2007,2021):
+                na_data = df.loc[str(from_yr)].count().sum()
+                _total = df.loc[str(from_yr)].shape
+                _total = _total[0]*_total[1]          
+                print("avaliable data in *{}* is ........{:.2f} || missing....{:.2f}%".format(from_yr,_total,(100-na_data*100/_total)))
+                #data,total_datapoint = df.loc[str(yr)].count()
+        count_miss(self.df)
+
+    def report_missing_by_station(self):
+        av_ratio = 0.45
+        useful_col = []
+        print("ST.......nan|total")
+        for col in self.df.columns:
+            nan = self.df[col].isna().sum()
+            avaliable =  self.df[col].count()
+            total = len(self.df[col])
+            print("{}.......{}||{},......{}".format(col,nan,avaliable,total))
+            if avaliable/total >av_ratio:
+                useful_col.append(col)
+        return useful_col
 
     def report_df(self):
         print(".......Report........")
@@ -94,11 +115,9 @@ class instant_df:
         print("total",self.df.shape)
         print(self.df.head())
 
-# rain = 'data/instant_data/rain.csv'
-# water = 'data/instant_data/water.csv'
-
-# rw = instant_df(water,rain,'2012-01-01','2014-01-01')
-# print(rw.df.head())
-# print(len(rw.only_related()[0]))
-# print(len(rw.only_related()[1]))
-# print(rain_water.rain_water_merge.head)
+# rain = 'data/instant_data/rain_small.csv'
+# water = 'data/instant_data/water_small.csv'
+# rw = instant_df(water,rain,start='2013-01-01',stop='2020-01-01')
+# df = rw.df
+# # df.interpolate(limit=30,inplace=True)
+# print(rw.report_missing_by_station())
