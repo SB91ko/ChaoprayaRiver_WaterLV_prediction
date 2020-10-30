@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 
 import pywt
+import warnings
 
 
 class prepTS:
@@ -37,12 +38,13 @@ class prepTS:
 
 
 class Arima_model:
-
+    warnings.filterwarnings('ignore')
     def __init__(self,X_data,pdq=(1,1,1),flag_bestpdq=False):
         self.X_data = X_data 
         self.model= None
-        self.flag_bestpdq = flag_bestpdq
         self.pdq = pdq
+        self.flag_bestpdq = flag_bestpdq
+        
         self.size = int(len(self.X_data) * 0.7)
         self.train,self.test = self.X_data[0:self.size-1], self.X_data[self.size:len(self.X_data)]
 
@@ -72,7 +74,7 @@ class Arima_model:
     def bestparameter(self):
         if self.flag_bestpdq:
             import itertools
-            import warnings
+            
             #p=d=q=range(0,10); pdq = list(itertools.product(p,d,q))
 
             p=q=range(0,10)
@@ -99,7 +101,7 @@ class WANN_model:
         self.X_data = X_data
         self.lv = int(np.log(len(self.X_data)))
         self.coeffs = None
-        #self.wa_X = self.wavelet_denoising()
+        self.wa_X = self.wavelet_denoising()
 
     def wavelet_denoising(self, wavelet='db4'):
         #https://www.kaggle.com/theoviel/denoising-with-direct-wavelet-transform
@@ -114,6 +116,9 @@ class WANN_model:
         coeff[1:] = (pywt.threshold(i, value=uthresh, mode='hard') for i in coeff[1:])
         return pywt.waverec(coeff, wavelet, mode='per')
 
+    def wavelet_reconstruction(self):
+        return pywt.waverec(self.coeffs,wavelet = self.wa_X)
+       
     # def wavelet_denoising(self, wavelet='db4', level=1):
     #     #https://www.kaggle.com/theoviel/denoising-with-direct-wavelet-transform
     #     def madev(d, axis=None):
