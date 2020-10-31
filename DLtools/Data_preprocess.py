@@ -14,27 +14,31 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 	Returns:
 		Pandas DataFrame of series framed for supervised learning.
 	"""
-    if type(data) is list:
+    try:
+        n_vars = data.shape[1]
+        col_name = data.columns
+    except IndexError:
         n_vars = 1
-    else:
-        try:
-            data.shape[1]
-        except:
-            n_vars = 1
-	
+        col_name = ['var']
+    except:
+        n_vars = data.shape[1]
+        col_name = ["var{}".format(i+1) for i in range(data.shape[1])]
+  
+
     df = pd.DataFrame(data)
     cols, names = list(), list()
     
+
     for i in range(n_in, 0, -1):
         cols.append(df.shift(i))
-        names += [('var%d(t-%d)' % (j+1, i)) for j in range(n_vars)]
+        names += [('{}(t-{})'.format(j, i)) for j in col_name]
 	# forecast sequence (t, t+1, ... t+n)
     for i in range(0, n_out):
         cols.append(df.shift(-i))
         if i == 0:
-            names += [('var%d(t)' % (j+1)) for j in range(n_vars)]
+            names += [('{}(t)'.format(j)) for j in col_name]
         else:
-            names += [('var%d(t+%d)' % (j+1, i)) for j in range(n_vars)]
+            names += [('{}(t+{})'.format(j, i)) for j in col_name]
 	# put it all together
     agg = pd.concat(cols, axis=1)
     agg.columns = names
@@ -93,12 +97,12 @@ class preprocess:
 
     def prepare_data(self):
     # ensure all data is float
-        try:
-            values = self.data.values
-            values = values.astype('float32')
-        except AttributeError:
-            values = self.data
-
+        # try:
+        #     values = self.data.values
+        #     values = values.astype('float32')
+        # except AttributeError:
+        #     values = self.data
+        values = self.data
         # frame as supervised learning
         reframed_slide_windows = series_to_supervised(values, n_in= self.n_timelag,n_out=self.n_out)
         print("="*50,'preview',"="*50)
