@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-import pandas as pd
+#import pandas as pd
 
 class prepLSTM:
     train_split_ratio = 0.8 #8:2 train:test
