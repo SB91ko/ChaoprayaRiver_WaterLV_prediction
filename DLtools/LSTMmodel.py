@@ -75,8 +75,3 @@ class prepLSTM:
     def validation_data(self):
         return (np.expand_dims(self.x_test, axis=0),np.expand_dims(self.y_test, axis=0))
 
-"""rain=pd.read_csv("data/instant_data/rain.csv",index_col=['date'],parse_dates=['date'])
-lstm = prepLSTM(rain,rain['WGTG'],7)
-validation_data = lstm.validation_data()
-print(validation_data[0].shape)
-"""

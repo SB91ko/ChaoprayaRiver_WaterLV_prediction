@@ -52,9 +52,10 @@ class instant_df:
         self.water_st_df = None
 
         self.water_df = self.df_maker(water_csv,'_w')
-        self.rain_df = self.df_maker(rain_csv,'_r')
+        self.rain_df = self.df_maker(rain_csv,'_r').resample('H').pad()
+        
         self.col_water,self.col_rain = self.only_related()
-        self.df = self.rain_water_merge(self.water_df.resample('d').mean(),self.rain_df)
+        self.df = self.rain_water_merge(self.water_df,self.rain_df)
         #self.useful_col = self.report_missing_by_station()
         # self.rain_scaler = None
         # self.water_scaler = None
@@ -65,7 +66,9 @@ class instant_df:
         return df[self.start:self.stop]
 
     def rain_water_merge(self,water,rain):
-        return pd.concat([water[self.col_water],rain[self.col_rain]])
+        df = pd.concat([water[self.col_water],rain[self.col_rain]])
+        df = df.reseample('d').mean()
+        return df
 
     def only_related(self):
         filepath = ("data/hii-telemetering-batch-data-master/")

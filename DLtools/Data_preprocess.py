@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.python.ops.gen_math_ops import requantization_range
+np.random.seed(42)
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
     """
     #Source: https://machinelearningmastery.com/convert-time-series-supervised-learning-problem-python/
@@ -47,7 +49,6 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
         agg.dropna(inplace=True)
     return agg
 
-
 class load_data:
     def __init__(self,rain,water,start=None,stop=None):
         self.start, self.stop = start,stop
@@ -83,44 +84,73 @@ def manual_trian_test_split(input_series,look_back):
     return X_train, Y_train, X_test, Y_test
 
 class preprocess:
-    def __init__(self,data,n_timelag,n_feature):
+    def __init__(self,data, Y_column, n_timelag,n_feature,t_predict_ahead=1,scale_ornot=False):
         self.data = data
+        self.Y_column = Y_column
         self.n_timelag = n_timelag
         self.n_feature = n_feature
-        self.n_out =1
-        self.ori_trainX,self.ori_trainY =None,None
+        self.t_predict_ahead = t_predict_ahead
+        self.scale_ornot =scale_ornot
+        self.scaler = self.scaler_transform()
+
+        self.ori_X,self.ori_Y =None,None
         self.test_X,self.test_Y = None,None
         self.train_X,self.train_Y, = None,None
         self.val_X,self.val_y = None,None
-
         self.prepare_data()
+
+    def scaler_transform(self):
+        if self.scale_ornot:
+            scaler = MinMaxScaler()
+            self.data[self.data.columns] = scaler.fit_transform(self.data[self.data.columns]) # scale each columns
+        return 
+
 
     def prepare_data(self):
     # ensure all data is float
-        # try:
-        #     values = self.data.values
-        #     values = values.astype('float32')
-        # except AttributeError:
-        #     values = self.data
         values = self.data
+        target = self.Y_column
         # frame as supervised learning
-        reframed_slide_windows = series_to_supervised(values, n_in= self.n_timelag,n_out=self.n_out)
-        print("="*50,'preview',"="*50)
-        print(reframed_slide_windows.head(5))
-        print(reframed_slide_windows.tail(5))
+        reframed_data = series_to_supervised(values, n_in= self.n_timelag,n_out=self.t_predict_ahead)
+        print("="*50,'preview Supervised',"="*50)
+        print(reframed_data.head(5))
+        print(reframed_data.tail(5))
 
-        print(reframed_slide_windows.values.shape)
-        print(len(reframed_slide_windows))
+        print(reframed_data.values.shape)
+        print(len(reframed_data))
         print("="*50,'X-Y Shape',"="*50)
         # split into input and outputs
-        re_data = reframed_slide_windows.values
-        X = re_data[:,0:(self.n_timelag*self.n_feature)]   
-        Y = re_data[:,-1]                                   #last columns as output
-        Y = Y.reshape(-1,1)
-        print(X.shape)
-        print(Y.shape)
+        X = reframed_data.iloc[:,:-self.n_feature]                # Eliminate last set of var(t)
+        if self.Y_column is None:
+            Y = reframed_data.iloc[:,-1].values                          # last columns as output   
+        else:
+            Y = reframed_data[str(target+'(t)')]
+        self.ori_X,self.ori_Y =X,Y
         
-        len_train = int(len(re_data)*0.7)                   #Train test _7:3
+        print(X.shape,"||******call ____ ori_x******")
+        print(Y.shape,"||******call ____ ori_y******")
+        try: 
+            X,Y = X.values,Y.values.reshape(-1,1)
+        except AttributeError:
+            X= X.values
+            Y = Y.reshape(-1,1)
+        ###################EDIT2 #############################
+        # X = reframed_data.iloc[:,:-self.n_feature].values                # Eliminate last set of var(t)
+        # if self.Y_column is None:
+        #     Y = reframed_data.iloc[:,-1].values                                   #last columns as output
+            
+        # else:
+        #     Y = reframed_data[str(target+'(t)')].values
+        # Y = Y.reshape(-1,1)
+        # print(X.shape)
+        # print(Y.shape)
+        # ####################EDITED PARTED################
+        #re_data = reframed_slide_windows.values
+        #X = re_data[:,0:(self.n_timelag*self.n_feature)]   
+        #Y = re_data[self.Y_column]
+        #################################################
+                
+        len_train = int(len(reframed_data)*0.7)                   #Train test _7:3
         trainX,trainY=X[:len_train,:], Y[:len_train,:]
         testX,testY=X[len_train:,:], Y[len_train:,:]       
         train_X, val_X, train_y, val_y = train_test_split(trainX, trainY, test_size=0.3) #Val data 7:3
@@ -130,14 +160,14 @@ class preprocess:
         print("Train....",train_X.shape, train_y.shape,"||")
         print("Val......",val_X.shape, val_y.shape,"||")
         
-        # reshape input to be 3D [samples, timesteps, features]
+        # reshape input to be 3D for deeplearning [samples, timesteps, features]
         train_X = train_X.reshape((train_X.shape[0], self.n_timelag, self.n_feature))
         val_X = val_X.reshape((val_X.shape[0], self.n_timelag, self.n_feature))
         test_X = testX.reshape((testX.shape[0], self.n_timelag, self.n_feature))
         
         ####Prep for report result#######
         trainX = trainX.reshape((trainX.shape[0], self.n_timelag, self.n_feature))
-        self.ori_trainX,self.ori_trainY =trainX,trainY
+        self.train_val_X,self.train_val_Y =trainX,trainY
         ########
 
         self.train_X,self.train_Y = train_X,train_y 
