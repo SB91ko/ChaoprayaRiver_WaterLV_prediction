@@ -44,6 +44,9 @@ Rec = pd.DataFrame()
 X_in = inputdata()
 TARGET = 'CPY015_w'
 FEATURE = X_in.shape[1]
+scaler_target = MinMaxScaler()
+scaler_target.fit(X_in[TARGET].values.reshape(-1,1))
+
 ###### TUNING PARAMETER: TIMELAGs,BATCHSIZE ######
 for times in range(1,15):
     TIME = times
@@ -62,8 +65,7 @@ for times in range(1,15):
         testPredict = model.predict(test_X)
         mse_train,mse_test,nse_train,nse_test = eva_error(trainPredict,tra_val_Y,testPredict,test_y)
 
-        scaler_target = MinMaxScaler()
-        scaler_target.fit(X_in[TARGET].values.reshape(-1,1))
+
         scale_trainPredict = scaler_target.inverse_transform(trainPredict)
         scale_testPredict = scaler_target.inverse_transform(testPredict)
         

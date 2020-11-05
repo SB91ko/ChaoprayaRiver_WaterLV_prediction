@@ -24,13 +24,10 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
         col_name = ['var']
     except:
         n_vars = data.shape[1]
-        col_name = ["var{}".format(i+1) for i in range(data.shape[1])]
-  
+        col_name = ["var{}".format(i+1) for i in range(data.shape[1])] 
 
     df = pd.DataFrame(data)
     cols, names = list(), list()
-    
-
     for i in range(n_in, 0, -1):
         cols.append(df.shift(i))
         names += [('{}(t-{})'.format(j, i)) for j in col_name]

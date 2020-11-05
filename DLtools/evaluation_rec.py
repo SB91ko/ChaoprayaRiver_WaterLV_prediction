@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 import math
 
-def eva_error(Y_hat,Y,Y_hat_fortest,Y_fortest):
+def eva_error(Y_hat,Y,Y_hat_for_test,Y_for_test):
     mse_train = mean_squared_error(Y_hat,Y)
-    mse_test = mean_squared_error(Y_hat_fortest,Y_fortest)
+    mse_test = mean_squared_error(Y_hat_for_test,Y_for_test)
     nse_train = hydroeval.nse(Y_hat,Y)
-    nse_test = hydroeval.nse(Y_hat_fortest,Y_fortest)
+    nse_test = hydroeval.nse(Y_hat_for_test,Y_for_test)
 
     return mse_train,mse_test,nse_train,nse_test
 
