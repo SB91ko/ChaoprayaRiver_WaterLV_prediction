@@ -36,7 +36,7 @@ def inputdata():
     rw = load_data(r,w)
     df =rw.df.resample('d').mean()
 
-    X_in = df['2013-01-01':'2015-01-01'].interpolate(limit=15)
+    X_in = df["2015-01-01":"2018-01-05"].interpolate(limit=15)
     X_in = X_in.astype('float32')
     return X_in
 

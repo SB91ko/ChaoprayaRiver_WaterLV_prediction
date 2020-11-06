@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.python.ops.gen_math_ops import requantization_range
 np.random.seed(42)
+
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
     """
     #Source: https://machinelearningmastery.com/convert-time-series-supervised-learning-problem-python/

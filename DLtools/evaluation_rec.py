@@ -1,6 +1,5 @@
 from sklearn.metrics import mean_squared_error
 import hydroeval
-import numpy as np
 import pandas as pd
 import math
 
@@ -12,6 +11,10 @@ def eva_error(Y_hat,Y,Y_hat_for_test,Y_for_test):
 
     return mse_train,mse_test,nse_train,nse_test
 
+def real_eva_error(Y_hat,Y):
+    mse_train = mean_squared_error(Y_hat,Y)
+    nse_train = hydroeval.nse(Y_hat,Y)
+    return mse_train,nse_train
 
 def error_rec(Base_df,model,n_feature,n_timelag,batch_size,mse_train,mse_test,nse_train,nse_test,gen_msetrain=None,gen_msetest=None,gen_nsetrain=None,gen_nsetest=None):
     df = pd.DataFrame({ 'model': model,
