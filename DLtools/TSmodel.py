@@ -48,7 +48,8 @@ class Arima_model:
         self.size = int(len(self.X_data) * 0.7)
         self.train,self.test = self.X_data[0:self.size-1], self.X_data[self.size:len(self.X_data)]
 
-        self.bestparameter()       
+        self.bestparameter()
+               
         
     def model_result(self):
         history = [x for x in self.train]

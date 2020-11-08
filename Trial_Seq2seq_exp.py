@@ -50,7 +50,7 @@ def build_model_seq2seq(train, n_input):
     # define parameters
     train_x, train_y = to_supervised(train, n_input)
     n_timesteps, n_features, n_outputs = train_x.shape[1], train_x.shape[2], train_y.shape[1]
-    callback_early_stopping = EarlyStopping(monitor='val_loss',patience=5, verbose=2)
+    callback_early_stopping = EarlyStopping(monitor='val_loss',patience=8, verbose=2)
     callbacks = [callback_early_stopping]
 
     # define model
