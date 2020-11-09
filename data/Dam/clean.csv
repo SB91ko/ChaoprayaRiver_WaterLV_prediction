@@ -1,4 +1,4 @@
-﻿,Date,Name,ปริมาตรน้ำในอ่าง_ปัจจุบัน_vol_million( m3),ปริมาตรน้ำในอ่าง_ใช้งานได้จริง_vol_million( m3),ปริมาตรน้ำไหลลงอ่าง_vol_million( m3),ปริมาตรน้ำระบาย_today_vol_million( m3),location
+﻿,date,Name,WaterVol,Useable_WaterVol,Input_WaterVol,Output_WaterVol,location
 1,2010-01-01,เขื่อนภูมิพล,"8,508","4,708.00",2.96,20.02,North
 2,2010-01-01,เขื่อนสิริกิติ์,"5,390","2,540.00",4.73,25.13,North
 4,2010-01-01,เขื่อนกิ่วลม,85,81.00,0.26,0.12,North

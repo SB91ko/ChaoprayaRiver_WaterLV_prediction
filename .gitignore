@@ -17154,3 +17154,7 @@ data/hii-telemetering-weather-data-master/2013/201305/YOM009.csv
 data/hii-telemetering-weather-data-master/2013/201305/YOM010.csv
 data/hii-telemetering-weather-data-master/2013/201305/YOM011.csv
 data/hii-telemetering-weather-data-master/2013/201305/YOM012.csv
+data/Dam/clean.csv
+output/fig.png
+output/Linear.csv
+output/Linear_fig.png

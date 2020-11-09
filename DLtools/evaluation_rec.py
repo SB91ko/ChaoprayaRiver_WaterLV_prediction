@@ -4,17 +4,14 @@ import pandas as pd
 import math
 
 def eva_error(Y_hat,Y,Y_hat_for_test,Y_for_test):
-    mse_train = mean_squared_error(Y_hat,Y)
-    mse_test = mean_squared_error(Y_hat_for_test,Y_for_test)
-    nse_train = hydroeval.nse(Y_hat,Y)
-    nse_test = hydroeval.nse(Y_hat_for_test,Y_for_test)
-
+    mse_train,nse_train = real_eva_error(Y_hat,Y)
+    mse_test,nse_test = real_eva_error(Y_hat_for_test,Y_for_test)
     return mse_train,mse_test,nse_train,nse_test
 
 def real_eva_error(Y_hat,Y):
-    mse_train = mean_squared_error(Y_hat,Y)
-    nse_train = hydroeval.nse(Y_hat,Y)
-    return mse_train,nse_train
+    mse = mean_squared_error(Y_hat,Y)
+    nse = hydroeval.nse(Y_hat,Y)
+    return mse,nse
 
 def error_rec(Base_df,model,n_feature,n_timelag,batch_size,mse_train,mse_test,nse_train,nse_test,gen_msetrain=None,gen_msetest=None,gen_nsetrain=None,gen_nsetest=None):
     df = pd.DataFrame({ 'model': model,
