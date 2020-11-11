@@ -81,6 +81,7 @@ class load_data:
         self.df_weather = self.weather_data()
         print("\nDam (daily)....")
         self.df_dam = self.dam_data()
+        
         print("==========TOTAL FILE==========")
         print("Rain.............Water.........Weather...........Dam")
         print(self.df_rain.shape, self.df_water.shape, self.df_weather.shape,self.df_dam.shape)
@@ -129,7 +130,7 @@ class load_data:
             t_df = yr_df.pivot(index='date', columns='station', values=col)
             new_col = [(i+"_"+col) for i in t_df.columns]
             t_df.columns = list(new_col)
-            final_df = pd.concat([final_df,t_df])
+            final_df = pd.concat([final_df,t_df],axis=1)
         return final_df
 
     def dam_data(self):
@@ -143,27 +144,29 @@ class load_data:
                             'เขื่อนป่าสักฯ': 'Pasak',
                             'เขื่อนเจ้าพระยา': 'ChaoPY'})
         df.drop(columns='Unnamed: 0',inplace=True)
-        
         cols = list(df.columns)
         cols = cols[1:-1]
         final_df = pd.DataFrame()
-        df.reset_index(inplace=True)
+        df = df.sort_index().reset_index()
+        
         for col in cols:
-            print(df[col].shape,col)
-            df[col].dropna(inplace=True)
-            print(df[col].shape,col)
+            print("working on column:",col)
             t_df = df.pivot(index='date', columns='Name', values=col)
             new_col = [(i+"_"+col) for i in t_df.columns]
             t_df.columns = list(new_col)
-            final_df = pd.concat([final_df,t_df])
-        for col in final_df.columns:
-            final_df[col] = final_df[col].astype(np.str)
-            final_df[col] = final_df[col].str.replace(',', '').astype(np.float32)
+            final_df = pd.concat([final_df,t_df],axis=1)
+            
+        # for col in final_df.columns:
+        #     final_df[col] = final_df[col].astype(np.str)
+        #     final_df[col] = final_df[col].str.replace(',', '').astype(np.float32)
         return final_df
         
 if __name__ == "__main__":
     print("Test function load weather")
     data = load_data()
     dam = data.df_dam
+    print("*"*70)
     print(dam.columns)
     print(dam.head())
+    print(dam.tail())
+    
