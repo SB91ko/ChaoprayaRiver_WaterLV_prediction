@@ -1,4 +1,3 @@
-from typing import final
 import pandas as pd
 import re,glob, os
 import numpy as np
@@ -72,16 +71,19 @@ class load_data:
     path_dam = '/home/song/Public/Song/Work/Thesis/data/Dam/clean.csv'
 
     def __init__(self):
-        print("START")
+        print("START LOADING DATA 2012-2020(July)")
         self.basins = ['แม่น้ำปิง',"แม่น้ำวัง","แม่น้ำยม","แม่น้ำน่าน",'แม่น้ำป่าสัก',"แม่น้ำเจ้าพระยา"]
-        
-        self.df_rain = self.rain_data()["2012-01-01":"2020-07-31"].resample('H').pad()
+        print("\nrainfall (daily)....")
+        self.df_rain = self.rain_data()["2012-01-01":"2020-07-31"] # resample('H').pad()
+        print("\nwater lv (hourly)....")
         self.df_water = self.water_data()["2012-01-01":"2020-07-31"]
+        print("\nweather lv (hourly)....")
         self.df_weather = self.weather_data()
+        print("\nDam (daily)....")
         self.df_dam = self.dam_data()
         print("==========TOTAL FILE==========")
-        print("Rain......Water.........Weather...........Dam")
-        print(self.df_rain.shape, self.df_water.shape, self.df_weather.shape,self.df_dam)
+        print("Rain.............Water.........Weather...........Dam")
+        print(self.df_rain.shape, self.df_water.shape, self.df_weather.shape,self.df_dam.shape)
         
     def rain_data(self):
         basin_list = related_basins(self.rain_st,self.basins)
@@ -122,6 +124,8 @@ class load_data:
         yr_df.reset_index(inplace=True)
         for col in cols:
             print(yr_df[col].shape,col)
+            yr_df.dropna(inplace=True)
+            print(yr_df[col].shape,col)
             t_df = yr_df.pivot(index='date', columns='station', values=col)
             new_col = [(i+"_"+col) for i in t_df.columns]
             t_df.columns = list(new_col)
@@ -130,32 +134,36 @@ class load_data:
 
     def dam_data(self):
         df = pd.read_csv(self.path_dam,index_col='date')
-        df['Name'] = df['Name'].replace({'เขื่อนภูมิพล':'Bhumibol',
-                            'เขื่อนสิริกิติ์' : 'Sirikit',
+        df['Name'] = df['Name'].replace({'เขื่อนภูมิพล':'BH',
+                            'เขื่อนสิริกิติ์' : 'SK',
                             'เขื่อนกิ่วลม' : 'KiewLom',
                             'เขื่อนกิ่วคอหมา': 'KiewKorMa',
                             'เขื่อนแควน้อย': 'KheawNoi',
-                            'เขื่อนทับเสลา': 'Thap Salao',
+                            'เขื่อนทับเสลา': 'ThapSalao',
                             'เขื่อนป่าสักฯ': 'Pasak',
-                            'เขื่อนเจ้าพระยา': 'Chaophraya'})
+                            'เขื่อนเจ้าพระยา': 'ChaoPY'})
         df.drop(columns='Unnamed: 0',inplace=True)
         
         cols = list(df.columns)
         cols = cols[1:-1]
-        print(cols)
         final_df = pd.DataFrame()
         df.reset_index(inplace=True)
         for col in cols:
+            print(df[col].shape,col)
+            df[col].dropna(inplace=True)
             print(df[col].shape,col)
             t_df = df.pivot(index='date', columns='Name', values=col)
             new_col = [(i+"_"+col) for i in t_df.columns]
             t_df.columns = list(new_col)
             final_df = pd.concat([final_df,t_df])
+        for col in final_df.columns:
+            final_df[col] = final_df[col].astype(np.str)
+            final_df[col] = final_df[col].str.replace(',', '').astype(np.float32)
         return final_df
         
 if __name__ == "__main__":
     print("Test function load weather")
-    data=load_data()
+    data = load_data()
     dam = data.df_dam
     print(dam.columns)
-    print(dam.shape)
+    print(dam.head())

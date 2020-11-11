@@ -1,4 +1,5 @@
-from DLtools.Data_preprocess import load_data, series_to_supervised
+from DLtools.Data_preprocess import load_data
+from DLtools.evaluation_rec import real_eva_error
 import numpy as np
 
 from sklearn.preprocessing import MinMaxScaler
@@ -15,12 +16,14 @@ def train_test(data,n_out):
     d_start = int(ratio-ratio%n_out)
     d_end = int(len(data)-len(data)%n_out)
     try:
-        train,test = X_in.iloc[:700,:].values,X_in.iloc[700:777,:].values
+        train,test = data.iloc[:700,:].values,data.iloc[700:777,:].values
     except:
         train,test = data[:d_start,:],data[d_start:d_end,:]
 
     train = np.array(np.split(train, len(train)/n_out))
     test = np.array(np.split(test, len(test)/n_out))
+    print("TRAIN SHAPE:.....",train.shape)
+    print("VALIDATION(TEST) SHAPE:......",test.shape)
     return train,test
 
 def to_supervised(train, n_input, n_out=7):
@@ -46,7 +49,7 @@ def to_supervised(train, n_input, n_out=7):
         in_start += 1
     return np.array(X), np.array(y)
 
-def build_model_seq2seq(train, n_input):
+def build_model_seq2seq(train, n_input,validation):
     # define parameters
     train_x, train_y = to_supervised(train, n_input)
     n_timesteps, n_features, n_outputs = train_x.shape[1], train_x.shape[2], train_y.shape[1]
@@ -70,7 +73,7 @@ def build_model_seq2seq(train, n_input):
     model.summary()
     # fit network
     history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, verbose=verbose,
-    validation_data=VALIDATION,callbacks=callbacks)
+    validation_data=validation,callbacks=callbacks)
     # plt.plot(history.history['loss'], label='train')
     # plt.plot(history.history['val_loss'], label='test')
     # plt.legend()
@@ -90,7 +93,6 @@ def forecast(model, history, n_input):
 	# we only want the vector forecast
 	yhat = yhat[0]
 	return yhat
-
 # evaluate a single model
 def evaluate_model(train, test, n_input):
 	# fit model
@@ -112,7 +114,7 @@ def evaluate_model(train, test, n_input):
 	return score, scores
 
 def summarize_scores(name, score, scores):
-	s_scores = ', '.join(['%.1f' % s for s in scores])
+	s_scores = ', '.join(['%.3f' % s for s in scores])
 	print('%s: [%.3f] %s' % (name, score, s_scores))
 
 def forecast(model, history, n_input):
@@ -130,13 +132,14 @@ def forecast(model, history, n_input):
     return yhat
 
 def evaluate_forecasts(actual, predicted):
-    scores = list()
+    mse_scores,nse_scores = list(),list()
     # calculate an RMSE score for each day
     for i in range(actual.shape[1]):
         # calculate mse
-        mse = mean_squared_error(actual[:, i], predicted[:, i])
+        mse,nse = real_eva_error(actual[:, i], predicted[:, i])
         # store
-        scores.append(mse)
+        mse_scores.append(mse)
+        nse_scores.append(nse)
     # calculate overall RMSE
     s = 0
     for row in range(actual.shape[0]):
@@ -144,15 +147,14 @@ def evaluate_forecasts(actual, predicted):
             s += (actual[row, col] - predicted[row, col])**2
     #score = math.sqrt(s / (actual.shape[0] * actual.shape[1]))
     score = (s / (actual.shape[0] * actual.shape[1]))
-    return score, scores
+    return score, mse_scores,nse_scores
 
 def move_column_inplace(df, col, pos):
     col = df.pop(col)
     df.insert(pos, col.name, col)
 
-
 ###########PARAMETER SETTING##############
-n_input = 14
+n_in = 14
 n_out = 7
 ##########LOAD DATA###############
 r='data/instant_data/rain_small.csv'
@@ -160,20 +162,39 @@ w='data/instant_data/water_small.csv'
 rw = load_data(r,w)
 df =rw.df.resample('d').mean()
 
-X_in = df["2015-01-01":"2018-01-05"].interpolate(limit=30)
-X_in = X_in.astype('float32')
-X_in = df.fillna(0) ############## FILL NA WITH 0
+data = df["2015-01-01":"2018-01-05"].interpolate(limit=30)
+data = data.astype('float32')
+data = df.fillna(0) 
 
 TARGET = 'CPY015_w'
-move_column_inplace(X_in,TARGET,0)
+move_column_inplace(data,TARGET,0)
 ########## SCALE ###############
-scale = MinMaxScaler()
-X_in = scale.fit_transform(X_in)
-##################################
-train, test = train_test(X_in,n_out=n_out)
-val_x, val_y = to_supervised(test, n_input)
-VALIDATION = (val_x,val_y)
 
-score, scores = evaluate_model(train, test, n_input)
-# summarize scores
-summarize_scores('lstm_seq2seq', score, scores)
+def experiment(data,n_in,n_out):
+    scale_data = MinMaxScaler().fit_transform(data)
+    ##################################
+    train, val = train_test(scale_data,n_out)
+    val_x, val_y = to_supervised(val, n_in)
+    VALIDATION = (val_x,val_y)
+
+    model = build_model_seq2seq(train, n_in,VALIDATION)
+    history = [x for x in train]
+    predictions = list()
+    for i in range(len(val)):
+        # predict the week
+        yhat_sequence = forecast(model, history, n_in)
+        # store the predictions
+        predictions.append(yhat_sequence)
+        # get real observation and add to history for predicting the next week
+        history.append(val[i, :])
+    # evaluate predictions days for each week
+    predictions = np.array(predictions)
+    score, mse_scores,nse_scores = evaluate_forecasts(val[:, :, 0], predictions)
+    summarize_scores('lstm',score,mse_scores)
+    print(nse_scores)
+    # m_scores = ', '.join(['%.1f' % s for s in mse_scores])
+    # n_scores = ', '.join(['%.1f' % s for s in nse_scores])
+    # print('%s: [%.3f] %s\n%s' % ("model", score, m_scores,n_scores))
+    # for i in range(n_out):
+    #     print("Day{} mse:{:.3f}".format(i,mse_scores[i]),"Day{} nse:{:.3f}".format(i,nse_scores[i]))
+experiment(data,n_in,n_out)
