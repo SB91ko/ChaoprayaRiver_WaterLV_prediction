@@ -10,7 +10,6 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense,Flatten, LSTM, RepeatVector,TimeDistributed
 from tensorflow.keras.callbacks import EarlyStopping
 
-
 def train_test(data,n_out):
     ratio = int(len(data)*.7)
     d_start = int(ratio-ratio%n_out)
