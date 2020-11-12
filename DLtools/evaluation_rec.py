@@ -3,10 +3,10 @@ import pandas as pd
 import numpy as np
 import math
 
-def eva_error(Y_hat,Y,Y_hat_for_test,Y_for_test):
-    mse_train,nse_train = real_eva_error(Y_hat,Y)
-    mse_test,nse_test = real_eva_error(Y_hat_for_test,Y_for_test)
-    return mse_train,mse_test,nse_train,nse_test
+# def eva_error(Y_hat,Y,Y_hat_for_test,Y_for_test):
+#     mse_train,nse_train = real_eva_error(Y_hat,Y)
+#     mse_test,nse_test = real_eva_error(Y_hat_for_test,Y_for_test)
+#     return mse_train,mse_test,nse_train,nse_test
 
 def real_eva_error(Y_hat,Y):
     mse = mean_squared_error(Y_hat,Y)
@@ -17,31 +17,32 @@ def real_eva_error(Y_hat,Y):
 def list_eva_error(Y,Y_hat,n_out):
     mse_l,nse_l,r2_l = list(),list(),list()
     for i in range(n_out):
-        mse = mean_squared_error(Y[:,i].reshape(-1,1),Y_hat[:,i],)
-        nse = nashsutcliffe(Y[:,i].reshape(-1,1),Y_hat[:,i],)
-        r2 = r2_score(Y[:,i].reshape(-1,1),Y_hat[:,i],)
+        try:
+            mse = mean_squared_error(Y[:,i].reshape(-1,1),Y_hat[:,i],)
+            nse = nashsutcliffe(Y[:,i].reshape(-1,1),Y_hat[:,i],)
+            r2 = r2_score(Y[:,i].reshape(-1,1),Y_hat[:,i],)
+        except:
+            mse = mean_squared_error(Y[:,i],Y_hat[:,i],)
+            nse = nashsutcliffe(Y[:,i],Y_hat[:,i],)
+            r2 = r2_score(Y[:,i],Y_hat[:,i],)
         mse_l.append(mse)
         nse_l.append(nse)
         r2_l.append(r2)
     return mse_l,nse_l,r2_l
 
-def error_rec(Base_df,model,n_feature,n_timelag,batch_size,mse_train,mse_test,nse_train,nse_test,gen_msetrain=None,gen_msetest=None,gen_nsetrain=None,gen_nsetest=None):
+def error_rec(Base_df,model,n_feature,n_in,batch_size,mse_train,mse_test,nse_train,nse_test,r2_train,r2_test):
     df = pd.DataFrame({ 'model': model,
                         'n_feature': n_feature,
-                        "n_timelag" : n_timelag,
+                        "n_timein" : n_in,
                         "batch_size": batch_size,
                         'MSE_train':mse_train,
                         "MSE_test":mse_test,
-                        'Gen_MSE_train': gen_msetrain,
-                        "Gen_MSE_test": gen_msetest,
                         'RMSE_train':math.sqrt(mse_train),
                         "RMSE_test": math.sqrt(mse_test),
-                        'Gen_RMSE_train': math.sqrt(gen_msetrain),
-                        "Gen_RMSE_test": math.sqrt(gen_msetest),
                         'NSE_trian':nse_train,
                         "NSE_test":nse_test,
-                        'Gen_NSE_trian': gen_nsetrain,
-                        "Gen_NSE_test": gen_nsetest,
+                        'R2_trian':r2_train,
+                        "R2_test":r2_test,
                         })
     return pd.concat([Base_df,df])
 
@@ -66,7 +67,6 @@ def nashsutcliffe(evaluation, simulation):
         denominator = np.nansum((e - mean_observed)**2)
         # compute coefficient
         return 1 - (numerator / denominator)
-
     else:
         print("evaluation and simulation lists does not have the same length.")
         return np.nan

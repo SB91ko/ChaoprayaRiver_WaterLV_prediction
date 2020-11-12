@@ -17159,3 +17159,13 @@ output/fig.png
 output/Linear.csv
 output/Linear_fig.png
 DLtools/__pycache__/evaluation_rec.cpython-38.pyc
+output/ARIMA/result_arima.png
+output/LSTM_EnDe/result_good_D1.png
+output/LSTM_EnDe/result_good_D2.png
+output/LSTM_EnDe/result_good_D3.png
+output/LSTM_EnDe/result_good_D4.png
+output/LSTM_EnDe/result_good_D5.png
+output/LSTM_EnDe/result_good_D6.png
+output/LSTM_EnDe/result_good_D7.png
+output/ARIMA/result_arima.png
+output/ARIMA/result_arima.png
