@@ -1,180 +1,147 @@
-from DLtools.Data_preprocess import load_data
-from DLtools.evaluation_rec import real_eva_error,error_rec
-
+from DLtools.evaluation_rec import real_eva_error,error_rec,list_eva_error
+from DLtools.Data import load_data,del_less_col,check_specific_col
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.metrics import mean_squared_error
 
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense,Flatten, LSTM, RepeatVector,TimeDistributed
+from tensorflow.keras.layers import Dense,Flatten, LSTM, RepeatVector,TimeDistributed,Input
 from tensorflow.keras.callbacks import EarlyStopping
-
-def train_test(data,n_out):    
-    ratio = int(len(data)*.7)
-    d_start = int(ratio-ratio%n_out)
-    d_end = int(len(data)-len(data)%n_out)
-    #train,test = X_in.iloc[:700,:].values,X_in.iloc[700:777,:].values
-    train,test = data[:d_start,:],data[d_start:d_end,:]
-
-    train = np.array(np.split(train, len(train)/n_out))
-    test = np.array(np.split(test, len(test)/n_out))
-    return train,test
-
-def to_supervised(train, n_input, n_out=7):
-    # flatten data
-    try :
-        data = train.reshape((train.shape[0]*train.shape[1], train.shape[2]))
-    except:
-        data = train.values
-    X, y = list(), list()
-    in_start = 0
-    # step over the entire history one time step at a time
-    for _ in range(len(data)):
-        # define the end of the input sequence
-        in_end = in_start + n_input
-        out_end = in_end + n_out   
-        # ensure we have enough data for this instance
-        if out_end <= len(data):
-            x_input = data[in_start:in_end, 0]
-            x_input = x_input.reshape((len(x_input), 1))
-            X.append(data[in_start:in_end, :])
-            y.append(data[in_end:out_end, 0])   #Y is the first columns
-        # move along one time step
-        in_start += 1
-    return np.array(X), np.array(y)
-# make a forecast
-def forecast(model, history, n_input):
-	# flatten data
-	data = np.array(history)
-	data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
-	# retrieve last observations for input data
-	input_x = data[-n_input:, :]
-	# reshape into [1, n_input, 1]
-	input_x = input_x.reshape((1, input_x.shape[0], input_x.shape[1]))
-	# forecast the next week
-	yhat = model.predict(input_x, verbose=0)
-	# we only want the vector forecast
-	yhat = yhat[0]
-	return yhat
-def build_model_seq2seq(train, n_input,validation=None):
-    # define parameters
-    train_x, train_y = to_supervised(train, n_input)
-    n_timesteps, n_features, n_outputs = train_x.shape[1], train_x.shape[2], train_y.shape[1]
-    callback_early_stopping = EarlyStopping(monitor='val_loss',patience=5, verbose=2)
-    #callbacks = [callback_early_stopping]
-    callbacks = None
-
-    # define model
-    verbose, epochs, batch_size = 0, 50, 16
-    n_timesteps, n_features, n_outputs = train_x.shape[1], train_x.shape[2], train_y.shape[1]
-    
-    # reshape output into [samples, timesteps, features]
-    train_y = train_y.reshape((train_y.shape[0], train_y.shape[1], 1))
-    # define model
-    model = Sequential()
-    model.add(LSTM(200, activation='relu', input_shape=(n_timesteps, n_features)))
-    model.add(RepeatVector(n_outputs))                                  # Decoder 
-    model.add(LSTM(200, activation='relu', return_sequences=True))
-    model.add(TimeDistributed(Dense(100, activation='relu')))
-    model.add(TimeDistributed(Dense(1)))
-    model.compile(loss='mse', optimizer='adam')
-    model.summary()
-    # fit network
-    history = model.fit(train_x, train_y, epochs=epochs, batch_size=batch_size, verbose=verbose,
-    validation_data=validation,callbacks=callbacks)
-    try:
-        plt.plot(history.history['loss'], label='train')
-        plt.plot(history.history['val_loss'], label='test')
-        plt.legend()
-        plt.show()
-    except: pass
-    return model
-
-# evaluate a single model
-def evaluate_model(train, test, n_input):
-	# fit model
-	model = build_model_seq2seq(train, n_input)
-	# history is a list of weekly data
-	history = [x for x in train]
-	# walk-forward validation over each week
-	predictions = list()
-	for i in range(len(test)):
-		# predict the week
-		yhat_sequence = forecast(model, history, n_input)
-		# store the predictions
-		predictions.append(yhat_sequence)
-		# get real observation and add to history for predicting the next week
-		history.append(test[i, :])
-	# evaluate predictions days for each week
-	predictions = np.array(predictions)
-	score, mse_scores,nse_scores = evaluate_forecasts(test[:, :, 0], predictions)
-	return score, mse_scores,nse_scores
-
-def summarize_scores(name, score, scores,nse_score):
-    s_scores = ', '.join(['%.1f' % s for s in scores])
-    n_scores = ', '.join(['%.1f' % s for s in nse_score])
-    print('%s: [%.3f] %s' % (name, score, s_scores))
-    print('%s: [%.3f] %s' % (name, score, n_scores))
-def forecast(model, history, n_input):
-	# flatten data
-	data = np.array(history)
-	data = data.reshape((data.shape[0]*data.shape[1], data.shape[2]))
-	# retrieve last observations for input data
-	input_x = data[-n_input:, :]
-	# reshape into [1, n_input, 1]
-	input_x = input_x.reshape((1, input_x.shape[0], input_x.shape[1]))
-	# forecast the next week
-	yhat = model.predict(input_x, verbose=0)
-	# we only want the vector forecast
-	yhat = yhat[0]
-	return yhat
-def evaluate_forecasts(actual, predicted):
-    mse_scores,nse_scores = list(),list()
-    # calculate an RMSE score for each day
-    for i in range(actual.shape[1]):
-        # calculate mse
-        mse,nse = real_eva_error(actual[:, i], predicted[:, i])
-        # store
-        mse_scores.append(mse)
-        nse_scores.append(nse)
-    return mse_scores,nse_scores
+np.random.seed(42)
 
 def move_column_inplace(df, col, pos):
     col = df.pop(col)
     df.insert(pos, col.name, col)
     return df
+def split_triantest(data,ratio=.7):
+    split_pt = int(data.shape[0]*ratio)
+    train,test = data.iloc[:split_pt,:],data.iloc[split_pt:,:]
+    return train,test
+def split_series(series, n_past, n_future):
+    # n_past ==> no of past observations
+    # n_future ==> no of future observations 
+    X, y = list(), list()
+    for window_start in range(len(series)):
+        past_end = window_start + n_past
+        future_end = past_end + n_future
+        if future_end > len(series):
+            break
+        # slicing the past and future parts of the window
+        past, future = series[window_start:past_end, :], series[past_end:future_end, :]
+        X.append(past)
+        y.append(future)
+    return np.array(X), np.array(y)
+#######################################
+def preprate_data(data):
+    train,test = split_triantest(data,ratio=0.7)
+    X_train, y_train = split_series(train.values,n_past, n_future)
+    X_train,y_train = X_train.reshape((X_train.shape[0], X_train.shape[1],n_features)),y_train[:,:,0]
+    
+    X_test, y_test = split_series(test.values,n_past, n_future)
+    X_test,y_test = X_test.reshape((X_test.shape[0], X_test.shape[1],n_features)),y_test[:,:,0]
+    return X_train,y_train,X_test,y_test
+#######################################
+def getPredict(X_train,y_train,X_test,y_test):
+    trainPredict = model.predict(X_train)
+    testPredict = model.predict(X_test)
+    return trainPredict,testPredict
 
-r='data/instant_data/rain_small.csv'
-w='data/instant_data/water_small.csv'
-rw = load_data(r,w)
-df =rw.df.resample('d').mean().astype('float32')
-data = df["2015-01-01":"2018-01-05"].interpolate(limit=360)
-TARGET = 'CPY015_w'
-data = move_column_inplace(data,TARGET,0)
-data.head()
-#SCALE
+def getEvaluation(Y, Yhat,Y_t, Yhat_t,n_future):
+    mse, nse,r2 = list_eva_error(Y, Yhat,n_future)
+    Tmse, Tnse,Tr2 = list_eva_error(Y_t, Yhat_t,n_future)
+    return mse, nse,r2,Tmse, Tnse,Tr2
+#######################################
+
+loaddata = load_data()
+df_d = loaddata.daily()
+df_h = loaddata.hourly()
+def def_model_lstm(X_train,y_train,X_test,y_test,n_timesteps, n_features, n_outputs,batch_size):    
+    # define model
+    model = Sequential()
+    model.add(LSTM(200, activation='relu', input_shape=(n_timesteps, n_features)))
+    model.add(RepeatVector(n_outputs))                                              # Decoder 
+    model.add(LSTM(200, activation='relu', return_sequences=True))
+    model.add(TimeDistributed(Dense(100, activation='relu')))
+    model.add(TimeDistributed(Dense(1)))
+    model.compile(loss='mse', optimizer='adam')
+    model.summary()
+
+    verbose, epochs = 0, 70
+    callback_early_stopping = EarlyStopping(monitor='val_loss',patience=10, verbose=2)
+    reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-3 * 0.90 ** x)
+    callbacks = [callback_early_stopping,reduce_lr]
+
+    history = model.fit(X_train,y_train,epochs=epochs,validation_data=(X_test,y_test),batch_size=batch_size,verbose=verbose,callbacks=callbacks)
+    
+    plt.plot(history.history['loss'], label='train')
+    plt.plot(history.history['val_loss'], label='test')
+    plt.title('Encode_Decode\nin:{},out:{},n_fea:{},batch:{}'.format(n_past,n_future,n_features,BATCH))
+    plt.savefig('output/LSTM_EnDe/temp/loss_rec_in{}_out{}_fea{}_bat{}.png'.format(n_past,n_future,n_features,BATCH), dpi=300, bbox_inches='tight') 
+    
+    plt.legend()
+    plt.show()
+    return model
+
+df = df_d["2013-01-01":"2017-12-31"].interpolate(limit=360).fillna(0)
+TARGET = 'CPY015_wl'
+df = move_column_inplace(df,TARGET,0)
+######PARAMETER SETTING################
+#n_past = 14
+n_future = 7 
+n_features = 370
+#BATCH = 64
+BATCH_LIST = [32,64,128]
+data = df
+###### SCALE###############
+scaler_tar = MinMaxScaler()
+scaler_tar.fit(df[TARGET].to_numpy().reshape(-1,1))
 scaler = MinMaxScaler()
 data[data.columns] = scaler.fit_transform(data[data.columns])
-n_input = 14
-n_out = 7
+######TRAIN TEST SPLIT###########
 
-def experiment(data,n_input,n_out):
-    train, test = train_test(data.values,n_out=n_out)
-    train_x,train_y = to_supervised(train,n_input)
-    val_x, val_y = to_supervised(test, n_input)
-    VALIDATION = (val_x,val_y)
-    model = build_model_seq2seq(train,n_input,VALIDATION)
-    # get prdict result as once
-    trainPredict = model.predict(train_x)
-    testPredict = model.predict(val_x)
+for n_past in range (7,31):
+    X_train,y_train,X_test,y_test = preprate_data(data)
+    for BATCH in BATCH_LIST:
+        ######MODEL GEN################
+        model = def_model_lstm(X_train,y_train,X_test,y_test,n_past, n_features, n_future,batch_size=32)
 
-    mse_scores,nse_scores = evaluate_forecasts(train_y, trainPredict)
-    # Tscore, Tmse_scores,Tnse_scores = evaluate_forecasts(val_y, testPredict)
-    print(mse_scores,nse_scores)
-    # print(Tscore, Tmse_scores,Tnse_scores)
+        #######PREDICT##################
+        trainPredict,testPredict = getPredict(X_train,y_train,X_test,y_test)
+        # Re scale
+        Y = scaler_tar.inverse_transform(y_train)
+        Yhat = scaler_tar.inverse_transform(trainPredict.reshape(y_train.shape))
+        Y_t = scaler_tar.inverse_transform(y_test)
+        Yhat_t = scaler_tar.inverse_transform(testPredict.reshape(y_test.shape))
+        ########EVALUATION#####################
+        mse, nse,r2,Tmse, Tnse,Tr2 = getEvaluation(Y, Yhat,Y_t, Yhat_t,n_future)
 
-experiment(data,n_input,n_out)
+        idx=['Modelname','Feature','n_in_time','batchsize','mse','nse','r2','Test_mse','Test_nse','Test_r2']
+        error = pd.DataFrame(index = idx)
+
+        graph_index = np.arange(len(y_train)+len(y_test))
+
+        for d in range(n_future):
+            g_Y= pd.Series(data=Y[:,d],index=graph_index[:len(y_train)])
+            g_Yhat = pd.Series(data=(Yhat[:,d].ravel()),index=graph_index[:len(y_train)])
+            g_Y_t= pd.Series(data=Y_t[:,d],index=graph_index[-len(y_test):])
+            g_Yhat_t = pd.Series(data=(Yhat_t[:,d].ravel()),index=graph_index[-len(y_test):])
+            
+            plt.figure(figsize=(15,5))
+            plt.plot(g_Y, label = "Actual")
+            plt.plot(g_Yhat, label = "Predict")
+            
+            plt.plot(g_Y_t, label = "Actual_test")
+            plt.plot(g_Yhat_t, label = "Predict_test")
+            plt.title('[Encode-Decdoe] Day{}\n'.format(d+1)+'Water Level CPY015 Forecast vs Actuals\n'+'Train MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (mse[d],nse[d],r2[d])+'\nTest  MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (Tmse[d],Tnse[d],Tr2[d]))
+            plt.savefig('output/LSTM_EnDe/result_in{}_out{}_fea{}_bat{}_d{}.png'.format(n_past,n_future,n_features,BATCH,d+1), dpi=300, bbox_inches='tight')
+            plt.legend()
+            plt.show()
+
+        ####################################################
+            _df = pd.DataFrame(["LSTM_EnDec_{}d".format(str(d+1)),n_features,n_past,'batch_size',mse[d], nse[d],r2[d],Tmse[d], Tnse[d],Tr2[d]],index=idx,columns=['LSTM'])
+            error = pd.concat([error,_df],axis=1)
+
+error.to_csv('output/LSTM_EnDe/temp/evaluation.csv')

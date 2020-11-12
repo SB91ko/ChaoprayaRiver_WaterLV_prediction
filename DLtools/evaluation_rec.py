@@ -44,6 +44,7 @@ def error_rec(Base_df,model,n_feature,n_in,batch_size,mse_train,mse_test,nse_tra
                         'R2_trian':r2_train,
                         "R2_test":r2_test,
                         })
+                        
     return pd.concat([Base_df,df])
 
 def nashsutcliffe(evaluation, simulation):

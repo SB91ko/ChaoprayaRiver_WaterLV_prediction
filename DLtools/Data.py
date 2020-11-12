@@ -159,14 +159,14 @@ class load_data:
 
     def dam_data(self):
         df = pd.read_csv(self.path_dam,index_col='date',parse_dates=['date'])
-        df['Name'] = df['Name'].replace({'เขื่อนภูมิพล':'BH',
-                            'เขื่อนสิริกิติ์' : 'SK',
-                            'เขื่อนกิ่วลม' : 'KiewLom',
-                            'เขื่อนกิ่วคอหมา': 'KiewKorMa',
-                            'เขื่อนแควน้อย': 'KheawNoi',
-                            'เขื่อนทับเสลา': 'ThapSalao',
-                            'เขื่อนป่าสักฯ': 'Pasak',
-                            'เขื่อนเจ้าพระยา': 'ChaoPY'})
+        df['Name'] = df['Name'].replace({'เขื่อนภูมิพล':'Dam_BH',
+                            'เขื่อนสิริกิติ์' : 'Dam_SK',
+                            'เขื่อนกิ่วลม' : 'Dam_KiewLom',
+                            'เขื่อนกิ่วคอหมา': 'Dam_KiewKorMa',
+                            'เขื่อนแควน้อย': 'Dam_KheawNoi',
+                            'เขื่อนทับเสลา': 'Dam_ThapSalao',
+                            'เขื่อนป่าสักฯ': 'Dam_Pasak',
+                            'เขื่อนเจ้าพระยา': 'Dam_ChaoPY'})
         df.drop(columns='Unnamed: 0',inplace=True)
         cols = list(df.columns)
         cols = cols[1:-1]
