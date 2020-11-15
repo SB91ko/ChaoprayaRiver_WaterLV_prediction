@@ -1,3 +1,4 @@
+from numpy.lib.npyio import load
 import pandas as pd
 import re,glob, os
 import numpy as np
@@ -53,6 +54,9 @@ def del_less_col(df,ratio=.65):
             df.drop(col, axis=1, inplace=True)
     print("After...",len(df.columns))
     return df
+
+def intersection(lst1, lst2): 
+    return list(set(lst1) & set(lst2))
 ##########################################################################################################
 class load_data:
     rain_st = pd.read_csv(f'/home/song/Public/Song/Work/Thesis/data/hii-telemetering-batch-data-master/station_metadata-rain.csv')
@@ -64,23 +68,38 @@ class load_data:
     path_weather = "/home/song/Public/Song/Work/Thesis/data/hii-telemetering-weather-data-master/*/*/"
     path_dam = '/home/song/Public/Song/Work/Thesis/data/Dam/clean.csv'
 
-    def __init__(self):
+    def __init__(self,load_all=True):
         print("START LOADING DATA 2012-2020(July)")
         self.basins = ['แม่น้ำปิง',"แม่น้ำวัง","แม่น้ำยม","แม่น้ำน่าน",'แม่น้ำป่าสัก',"แม่น้ำเจ้าพระยา"]
-        print("\nrainfall (daily)....")
-        self.df_rain = self.rain_data() # resample('H').pad()
-        print("\nwater lv (hourly)....")
-        self.df_water = self.water_data()
-        print("\nweather lv (hourly)....")
-        self.df_weather = self.weather_data()
-        print("\nDam (daily)....")
-        self.df_dam = self.dam_data()
-        
-        print("==========TOTAL FILE==========")
-        print("Rain.............Water.........Weather...........Dam")
-        print(self.df_rain.shape, self.df_water.shape, self.df_weather.shape,self.df_dam.shape)
-        
+        self.load_all =load_all
+        self.df_rain =None
+        self.df_water = None
+        self.df_weather = None
+        self.df_dam = None
+        if load_all==True:
+            print("\nrainfall (daily)....")
+            self.df_rain = self.rain_data() # resample('H').pad()
+            print("\nwater lv (hourly)....")
+            self.df_water = self.water_data()
+            print("\nweather lv (hourly)....")
+            self.df_weather = self.weather_data()
+            print("\nDam (daily)....")
+            self.df_dam = self.dam_data()
+            
+            print("==========TOTAL FILE==========")
+            print("Rain.............Water.........Weather...........Dam")
+            print(self.df_rain.shape, self.df_water.shape, self.df_weather.shape,self.df_dam.shape)
+
     def daily(self):
+        if self.df_rain ==None:
+            self.df_rain = self.rain_data() # resample('H').pad()        
+        elif  self.df_water==None:
+            self.df_water = self.water_data()        
+        elif  self.df_weather==None:
+            self.df_weather = self.weather_data()
+        elif  self.df_dam==None:
+            self.df_dam = self.dam_data()
+
         rain1h = check_specific_col(self.df_weather,'rain1h')
         weather_d = self.df_weather.drop(rain1h, axis=1)
         daily = [self.df_rain,self.df_water.resample('d').mean(),weather_d.resample('d').mean(),self.df_dam.resample('d').mean()]
@@ -88,6 +107,11 @@ class load_data:
         return df
 
     def hourly(self):
+        if (self.df_water ==None):
+            self.df_water = self.water_data()
+        elif  (self.df_weather==None):
+            self.df_weather = self.weather_data()
+        else: pass
         hourly = [self.df_water.resample('h').mean(),self.df_weather]
         df_h = pd.concat(hourly,axis=1)
         return df_h
@@ -185,16 +209,69 @@ class load_data:
             final_df[col] = final_df[col].str.replace(',', '').astype(np.float32)
         final_df = final_df["2013-01-01":"2020-07-31"]
         return del_less_col(final_df)
-        
-if __name__ == "__main__":
-    print("Test function load weather")
-    data = load_data()
-    dam = data.df_rain
-    print("*"*70)
-    print(dam.columns)
-    print(dam.head())
-    print(dam.tail())
 
+
+class instant_data:
+    rain='/home/song/Public/Song/Work/Thesis/data/instant_data/all/rain.csv'
+    water= '/home/song/Public/Song/Work/Thesis/data/instant_data/all/water.csv'
+    weather = '/home/song/Public/Song/Work/Thesis/data/instant_data/all/weather.csv'
+    dam = '/home/song/Public/Song/Work/Thesis/data/instant_data/all/dam.csv'
+    def __init__(self):
+        
+        self.df_w = self.df_maker(self.water)
+        self.df_r = self.df_maker(self.rain)
+        self.df_wet = self.df_maker(self.weather)
+        self.df_d = self.df_maker(self.dam)
+
+    def df_maker(self,csvfile):
+        df = pd.read_csv(csvfile,index_col=['date'],parse_dates=['date'])
+        # df.rename(columns=lambda x: x+syn, inplace=True)
+        return df
+
+    def rain_water_merge(self,rain,water):
+        return pd.concat([rain,water])
+    
+    def daily_instant(self):
+        rain1h = check_specific_col(self.df_wet,'rain1h')
+        close_bkk = check_specific_col(self.df_w,'BKK')
+        solar = check_specific_col(self.df_wet,'solar')
+        
+        daily = [self.df_r,self.df_w.resample('d').mean(),self.df_wet.resample('d').mean(),self.df_d.resample('d').mean()]
+        df = pd.concat(daily,axis=1)
+        df = df.drop(rain1h+close_bkk+solar, axis=1)
+        return df
+
+    def hourly_instant(self):
+        hourly = [self.df_w.resample('h').mean(),self.df_wet]
+        df_h = pd.concat(hourly,axis=1)
+
+        close_bkk = check_specific_col(self.df_w,'BKK')
+        solar = check_specific_col(self.df_wet,'solar')
+        df_h = df_h.drop(close_bkk+solar, axis=1)
+        return df_h
+
+
+if __name__ == "__main__":
+    # print("Test function load weather")
+    # path='/home/song/Public/Song/Work/Thesis/data/instant_data/all/'
+    # loaddata = load_data(load_all=False)
+    
+    # water=loaddata.water_data()
+    # water.to_csv(path+'water.csv')
+
+    # weather=loaddata.weather_data()
+    # weather.to_csv(path+'weather.csv')
+    
+    # rain = loaddata.rain_data()
+    # rain.to_csv(path+'rain.csv')
+
+    # dam = loaddata.dam_data()
+    # dam.to_csv(path+'dam.csv')
+
+    load = instant_data()
+    df = load.daily_instant()
+    print(df.columns)
+    print(df.head())
 
 
 # def convert_df(ori_df,col):
