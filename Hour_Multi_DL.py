@@ -1,5 +1,5 @@
 from DLtools.evaluation_rec import real_eva_error,error_rec,list_eva_error
-from DLtools.Data import del_less_col,check_specific_col,instant_data,intersection
+from DLtools.Data import del_less_col,check_specific_col,instant_data,intersection,station_sel
 
 import pandas as pd
 import numpy as np
@@ -68,29 +68,37 @@ def record_result(y_train,y_test,trainPredict,testPredict,scaler_target,syn):
         _df = pd.DataFrame(["{}_{}h".format(syn,str(d+1)),n_features,n_past,batch_size,mse[d], nse[d],r2[d],Tmse[d], Tnse[d],Tr2[d]],index=idx,columns=[syn])
         error = pd.concat([error,_df],axis=1)
         #Note Fix path for error Record
-        error.to_csv('/home/song/Public/Song/Work/Thesis/output/Hourly/eval.csv')
+        error.to_csv(errorfile)
 
 loading = instant_data()
-df_h = loading.hourly_instant()
-TARGET = 'CPY015_wl'
-data = df_h['2013-01-01':'2017-12-31']
+# df_h = loading.hourly_instant()
+df_d = loading.daily_instant()
+TARGET,start_p,stop_p,save_host=station_sel('CPY012')
+save_path ='/home/song/Public/Song/Work/Thesis/output_cpy012/Daily/DL/'
+errorfile='/home/song/Public/Song/Work/Thesis/output_cpy012/Daily/eval.csv'
+
+#load previous error rec
+idx=['Modelname','Feature','n_in_time','batchsize','mse','nse','r2','Test_mse','Test_nse','Test_r2']
+try: error = pd.read_csv('/home/song/Public/Song/Work/Thesis/output_cpy012/Daily/eval.csv',index_col=0);print('LOAD SUCEESS')
+except: error = pd.DataFrame(errorfile,index = idx);print("cannot find rec")
+
+data = df_d[start_p:stop_p]
 data = del_less_col(data,ratio=.85)
 data['Day'] = data.index.dayofyear #add day
 data = data.interpolate(limit=24).apply(lambda x: x.fillna(x.mean()),axis=0).astype('float32')#interpolate neighbor first, for rest NA fill with mean()
 
-
-#load previous error rec
-idx=['Modelname','Feature','n_in_time','batchsize','mse','nse','r2','Test_mse','Test_nse','Test_r2']
-
-try: error = pd.read_csv('/home/song/Public/Song/Work/Thesis/output/Hourly/eval.csv',index_col=False)
-except: error = pd.DataFrame(index = idx)
-
-save_path = '/home/song/Public/Song/Work/Thesis/output/Hourly/DL/'
 #####################
-
 # MAR Feature selection
 def mars_selection(data):
-    mar = pd.read_csv('/home/song/Public/Song/Work/Thesis/featurelist_MAR_hourly_7d.csv')
+    global TARGET
+    if TARGET=='CPY015_wl':
+        MARfile='/home/song/Public/Song/Work/Thesis/MAR/featurelist_MAR_daily_7d.csv'
+        # MARfile='/home/song/Public/Song/Work/Thesis/MAR/featurelist_MAR_hourly_7d.csv'
+    elif TARGET=='CPY012_wl':
+        MARfile='/home/song/Public/Song/Work/Thesis/MAR/[CPY012]featurelist_MAR_daily_7d.csv'
+        # MARfile='/home/song/Public/Song/Work/Thesis/MAR/[CPY012]featurelist_MAR_hourly.csv'
+
+    mar = pd.read_csv(MARfile)
     col = [i for i in data.columns]
     select_col = intersection(col,mar['feature'])
     select_col.append(TARGET) # add target
@@ -108,7 +116,6 @@ def build_lstm():
     model.add(Dense(n_future))
     model.compile(loss='mse', optimizer='adam')
     model.summary()
-    
     return model
 
 def build_ende_lstm():
@@ -134,13 +141,11 @@ def build_cnn1d():
     model.add(Dropout(0.3))
     model.add(Dense(50, activation='relu'))
     model.add(Dense(n_future))
-    model.compile(optimizer='adam', loss='mse')
-    
-    
+    model.compile(optimizer='adam', loss='mse')    
     return model
 
 def run_code(model,batch_size,syn,zoom=True):
-    verbose, epochs = 1, 70
+    verbose, epochs = 1, 120
     # n_timesteps, n_features, n_outputs = X_train.shape[1], X_train.shape[2], y_train.shape[1]
     history = model.fit(X_train,y_train,epochs=epochs,validation_data=(X_test,y_test),batch_size=batch_size,verbose=verbose,callbacks=callbacks)
     plt.plot(history.history['loss'], label='train')
@@ -195,15 +200,15 @@ y_test = y_test[:,:,0]
 print(X_train.shape,y_train.shape)
 print(X_test.shape,y_test.shape)
 #######################################
-callback_early_stopping = EarlyStopping(monitor='val_loss',patience=7, verbose=2)
+callback_early_stopping = EarlyStopping(monitor='val_loss',patience=10, verbose=2)
 reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-3 * 0.90 ** x)
 callbacks = [callback_early_stopping,reduce_lr]
 
 batch_size=128
-# run_code(build_cnn1d(),batch_size,'CNN_1D_MAR')
-# run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR')
-run_code(build_lstm(),batch_size,'LSTM_MAR')
-
+run_code(build_cnn1d(),batch_size,'CNN_1D_MAR')
+run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR')
+try:run_code(build_lstm(),batch_size,'LSTM_MAR')
+except:pass
 
 
 ###### SETTING ################
@@ -235,6 +240,6 @@ print(X_train.shape,y_train.shape)
 print(X_test.shape,y_test.shape)
 #######################################
 batch_size = 128
-# run_code(build_cnn1d(),batch_size,'CNN_1D')
-# run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM')
+run_code(build_cnn1d(),batch_size,'CNN_1D')
+run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM')
 run_code(build_lstm(),batch_size,'LSTM')

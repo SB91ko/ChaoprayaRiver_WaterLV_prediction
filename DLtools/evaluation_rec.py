@@ -18,13 +18,15 @@ def list_eva_error(Y,Y_hat,n_out):
     mse_l,nse_l,r2_l = list(),list(),list()
     for i in range(n_out):
         try:
-            mse = mean_squared_error(Y[:,i],Y_hat[:,i],)
-            nse = nashsutcliffe(Y_hat[:,i],Y[:,i])
-            r2 = r2_score(Y[:,i],Y_hat[:,i],)
+            mse,nse,r2=real_eva_error(Y[:,i],Y_hat[:,i])
+            # mse = mean_squared_error(Y[:,i],Y_hat[:,i],)
+            # nse = nashsutcliffe(Y_hat[:,i],Y[:,i])
+            # r2 = r2_score(Y[:,i],Y_hat[:,i],)
         except:
-            mse = mean_squared_error(Y[:,i].reshape(-1,1),Y_hat[:,i],)
-            nse = nashsutcliffe(Y_hat[:,i],Y[:,i].reshape(-1,1))
-            r2 = r2_score(Y[:,i].reshape(-1,1),Y_hat[:,i],)
+            mse,nse,r2=real_eva_error(Y[:,i].reshape(-1,1),Y_hat[:,i])
+            # mse = mean_squared_error(Y[:,i].reshape(-1,1),Y_hat[:,i],)
+            # nse = nashsutcliffe(Y_hat[:,i],Y[:,i].reshape(-1,1))
+            # r2 = r2_score(Y[:,i].reshape(-1,1),Y_hat[:,i],)
         mse_l.append(mse)
         nse_l.append(nse)
         r2_l.append(r2)
