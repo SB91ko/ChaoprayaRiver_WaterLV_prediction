@@ -38,7 +38,7 @@ def viz_data(save_name,save_path,data,n_graph,big_size=True,sample_size=7000):
 
 path = 'output/DataViz/'
 # viz_data(save_name='water_lv',save_path=path,data=df_w,n_graph=9,)
-# viz_data(save_name='dam',save_path=path,data=df_dam,n_graph=9,)
+viz_data(save_name='dam',save_path=path,data=df_dam,n_graph=7,)
 # viz_data(save_name='rain_daily',save_path=path,data=df_r,n_graph=9,big_size=True,sample_size=1000)
 # viz_data(save_name='solar',save_path=path,data=df_solar,n_graph=11,big_size=True,sample_size=1000)
 # viz_data(save_name='rain1h',save_path=path,data=df_rain1h,n_graph=11,big_size=True,sample_size=500)

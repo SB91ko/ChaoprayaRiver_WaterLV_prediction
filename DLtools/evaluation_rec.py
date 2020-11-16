@@ -8,8 +8,8 @@ import math
 #     mse_test,nse_test = real_eva_error(Y_hat_for_test,Y_for_test)
 #     return mse_train,mse_test,nse_train,nse_test
 
-def real_eva_error(Y_hat,Y):
-    mse = mean_squared_error(Y_hat,Y)
+def real_eva_error(Y,Y_hat):
+    mse = mean_squared_error(Y,Y_hat)
     nse = nashsutcliffe(Y_hat,Y)
     r2 = r2_score(Y,Y_hat)
     return mse,nse,r2
