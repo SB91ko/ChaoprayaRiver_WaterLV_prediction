@@ -1,8 +1,6 @@
-from numpy.lib.npyio import load
-import pandas as pd
 import re,glob, os
-import numpy as np
-from tqdm import tqdm
+from DLtools import *
+
 
 def check_specific_col(df,column_name='rain1h'):
     """
@@ -228,20 +226,18 @@ class instant_data:
         # df.rename(columns=lambda x: x+syn, inplace=True)
         return df
 
-    def rain_water_merge(self,rain,water):
-        return pd.concat([rain,water])
-    
     def daily_instant(self):
         rain1h = check_specific_col(self.df_wet,'rain1h')
-        close_bkk = check_specific_col(self.df_w,'BKK')
-        solar = check_specific_col(self.df_wet,'solar')
+        # close_bkk = check_specific_col(self.df_w,'BKK')
+        # solar = check_specific_col(self.df_wet,'solar')
         
         daily = [self.df_r,self.df_w.resample('d').mean(),self.df_wet.resample('d').mean(),self.df_d.resample('d').mean()]
         df = pd.concat(daily,axis=1)
-        df = df.drop(rain1h+close_bkk+solar, axis=1)
+        df = df.drop(rain1h, axis=1)
+        # df = df.drop(rain1h+close_bkk+solar, axis=1)
         return df
 
-    def hourly_instant(self,lim_and_del=False):
+    def hourly_instant(self):
         """
         lim_and_del is flag  ready to use data(as target defined)
         limit data to 2013-2017 || del col ratio less than 80%
@@ -249,32 +245,31 @@ class instant_data:
         hourly = [self.df_w.resample('h').mean(),self.df_wet]
         df_h = pd.concat(hourly,axis=1)
 
-        close_bkk = check_specific_col(self.df_w,'BKK')
-        solar = check_specific_col(self.df_wet,'solar')
-        df_h = df_h.drop(close_bkk+solar, axis=1)
-        if lim_and_del==True:
-            df_h = df_h['2013-01-01':'2017-12-31']
-            df_h = del_less_col(df_h,0.8)
+        # close_bkk = check_specific_col(self.df_w,'BKK')
+        # solar = check_specific_col(self.df_wet,'solar')
+        # df_h = df_h.drop(close_bkk+solar, axis=1)
 
         return df_h
-def station_sel(st):
+def station_sel(st,mode):
     """Select and return station status setting"""
     if st == 'CPY015':
         target='CPY015_wl'
         start_p = '2013-01-01'
         stop_p ='2017-12-31'
-        save_path = '/home/song/Public/Song/Work/Thesis/output/'
+        if mode =='hour': host_path = '/home/song/Public/Song/Work/Thesis/output/Hourly'
+        elif mode =='day': host_path = '/home/song/Public/Song/Work/Thesis/output/Daily'
     elif st == 'CPY012':
         target='CPY012_wl'
         start_p ="2014-02-01"
         stop_p ="2018-03-31"
-        save_path = '/home/song/Public/Song/Work/Thesis/output_cpy012/'
+        if mode =='hour': host_path = '/home/song/Public/Song/Work/Thesis/output_cpy012/Hourly'
+        elif mode =='day': host_path = '/home/song/Public/Song/Work/Thesis/output_cpy012/Daily'
     else: print('error nothing return from station sel') 
-
-    return target,start_p,stop_p,save_path
+    return target,start_p,stop_p,host_path
 
 
 if __name__ == "__main__":
+
     # print("Test function load weather")
     # path='/home/song/Public/Song/Work/Thesis/data/instant_data/all/'
     # loaddata = load_data(load_all=False)
