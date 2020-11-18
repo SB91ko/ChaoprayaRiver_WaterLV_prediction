@@ -5,7 +5,7 @@ from DLtools.feature_sel import call_mar
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+
 from sklearn.preprocessing import MinMaxScaler
 from keras.utils.vis_utils import plot_model
 
@@ -41,7 +41,7 @@ df = loading.hourly_instant()
 # df = loading.daily_instant()
 mode = 'hour'
 n_past = 24*7
-n_future = 24
+n_future = 72
 
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
@@ -81,6 +81,7 @@ def build_cnn1d():
     model.add(Dense(50, activation='relu'))
     model.add(Dense(n_future))
     model.compile(optimizer='adam', loss='mse')    
+    model.summary()
     return model
 def run_code(model,batch_size,syn,zoom=True):
     global target,mode
@@ -118,6 +119,10 @@ def split_xy(data,n_past,n_future):
     y = y[:,:,0]
     return x,y
 
+callback_early_stopping = EarlyStopping(monitor='val_loss',patience=10, verbose=2)
+reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-3 * 0.90 ** x)
+callbacks = [callback_early_stopping,reduce_lr]
+######################################################
 
 data = df[start_p:stop_p]
 data = del_less_col(data,ratio=.85)
@@ -144,10 +149,6 @@ X_test, y_test = split_xy(test,n_past,n_future)
 print(X_train.shape,y_train.shape)
 print(X_test.shape,y_test.shape)
 #######################################
-callback_early_stopping = EarlyStopping(monitor='val_loss',patience=10, verbose=2)
-reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-3 * 0.90 ** x)
-callbacks = [callback_early_stopping,reduce_lr]
-
 batch_size=128
 run_code(build_cnn1d(),batch_size,'CNN_1D_MAR')
 run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR')
@@ -175,6 +176,9 @@ X_train, y_train = split_xy(train,n_past,n_future)
 X_test, y_test = split_xy(test,n_past,n_future)
 #######################################
 batch_size = 128
-run_code(build_cnn1d(),batch_size,'CNN_1D')
-run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM')
-run_code(build_lstm(),batch_size,'LSTM')
+try: run_code(build_cnn1d(),batch_size,'CNN_1D')
+except:pass
+try: run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM')
+except:pass
+try: run_code(build_lstm(),batch_size,'LSTM')
+except:pass

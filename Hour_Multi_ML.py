@@ -45,8 +45,8 @@ def plot_corr(data,syn):
 if __name__ == "__main__":
     loading = instant_data()
     ###########################################
-    df = loading.hourly_instant()
-    # df = loading.daily_instant()
+    # df = loading.hourly_instant()
+    df = loading.daily_instant()
     syn = ''
     mode = 'hour'
     st = 'CPY012'
@@ -61,9 +61,9 @@ if __name__ == "__main__":
 
 
     data = df[start_p:stop_p]
-    data = del_less_col(data,ratio=.85)
+    data = del_less_col(data,ratio=.85).interpolate(limit=30000000,limit_direction='both').astype('float32')
     data['Day'] = data.index.dayofyear #add day
-    data = data.interpolate(limit=30000000,limit_direction='both').astype('float32')
+    
     
     for n_past in tqdm(range(1,n_future+1)):
         data = df.astype('float32')#interpolate neighbor first, for rest NA fill with mean()

@@ -229,11 +229,11 @@ class instant_data:
     def daily_instant(self):
         rain1h = check_specific_col(self.df_wet,'rain1h')
         # close_bkk = check_specific_col(self.df_w,'BKK')
-        # solar = check_specific_col(self.df_wet,'solar')
+        solar = check_specific_col(self.df_wet,'solar')
         
         daily = [self.df_r,self.df_w.resample('d').mean(),self.df_wet.resample('d').mean(),self.df_d.resample('d').mean()]
         df = pd.concat(daily,axis=1)
-        df = df.drop(rain1h, axis=1)
+        df = df.drop(rain1h+solar, axis=1)
         # df = df.drop(rain1h+close_bkk+solar, axis=1)
         return df
 
@@ -246,9 +246,9 @@ class instant_data:
         df_h = pd.concat(hourly,axis=1)
 
         # close_bkk = check_specific_col(self.df_w,'BKK')
-        # solar = check_specific_col(self.df_wet,'solar')
+        solar = check_specific_col(self.df_wet,'solar')
+        df_h = df_h.drop(solar, axis=1)
         # df_h = df_h.drop(close_bkk+solar, axis=1)
-
         return df_h
 def station_sel(st,mode):
     """Select and return station status setting"""
