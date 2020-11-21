@@ -37,11 +37,11 @@ def split_series(series, n_past, n_future):
 
 ###### SETTING AREA ################
 loading = instant_data()
-df = loading.hourly_instant()
-# df = loading.daily_instant()
-mode = 'hour'
-n_past = 24*7
-n_future = 72
+# df,mode = loading.hourly_instant(),'hour'
+df,mode = loading.daily_instant(),'day'
+
+if mode =='hour': n_past,n_future = 24*7,24
+elif mode =='day': n_past,n_future = 60,30
 
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
@@ -176,9 +176,6 @@ X_train, y_train = split_xy(train,n_past,n_future)
 X_test, y_test = split_xy(test,n_past,n_future)
 #######################################
 batch_size = 128
-try: run_code(build_cnn1d(),batch_size,'CNN_1D')
-except:pass
-try: run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM')
-except:pass
-try: run_code(build_lstm(),batch_size,'LSTM')
-except:pass
+run_code(build_cnn1d(),batch_size,'CNN_1D')
+run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM')
+run_code(build_lstm(),batch_size,'LSTM')

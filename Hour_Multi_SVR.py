@@ -30,9 +30,6 @@ X = data_mar.drop(columns=[target])
 Y = data_mar[target]
 
 
-X = data_mar.drop(columns=[target]).values
-Y = data_mar[target].values
-
 sc_X = StandardScaler()
 sc_y = StandardScaler()
 X = sc_X.fit_transform(X)

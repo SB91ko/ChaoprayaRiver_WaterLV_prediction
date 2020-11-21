@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 def real_eva_error(Y,Y_hat):
     mse = mean_squared_error(Y,Y_hat)
-    nse = nashsutcliffe(Y_hat,Y)
+    nse = nashsutcliffe(Y,Y_hat)
     r2 = r2_score(Y,Y_hat)
     return mse,nse,r2
 
@@ -63,7 +63,7 @@ def record_list_result(syn,mode,trainY,testY,trainPredict,testPredict,target,bat
         error.to_csv(save_path+'/eval.csv')
     return testY,testPredict
 
-def nashsutcliffe(evaluation, simulation):
+def nashsutcliffe(y, yhat):
     """
     Nash-Sutcliffe model efficinecy
         .. math::
@@ -75,13 +75,13 @@ def nashsutcliffe(evaluation, simulation):
     :return: Nash-Sutcliff model efficiency
     :rtype: float
     """
-    if len(evaluation) == len(simulation):
-        s, e = np.array(simulation), np.array(evaluation)
+    if len(y) == len(yhat):
+        simulation_yhat, evaluation_y = np.array(yhat), np.array(y)
         # s,e=simulation(Yhat),evaluation(Y)
-        mean_observed = np.nanmean(e)
+        mean_observed = np.nanmean(evaluation_y)
         # compute numerator and denominator
-        numerator = np.nansum((e - s) ** 2)
-        denominator = np.nansum((e - mean_observed)**2)
+        numerator = np.nansum((evaluation_y - simulation_yhat) ** 2)
+        denominator = np.nansum((evaluation_y - mean_observed)**2)
         # compute coefficient
         return 1 - (numerator / denominator)
     else:
