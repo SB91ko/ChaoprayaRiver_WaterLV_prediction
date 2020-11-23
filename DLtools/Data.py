@@ -61,14 +61,14 @@ def intersection(lst1, lst2):
     return list(set(lst1) & set(lst2))
 ##########################################################################################################
 class load_data:
-    rain_st = pd.read_csv(f'/home/song/Public/Song/Work/Thesis/data/hii-telemetering-batch-data-master/station_metadata-rain.csv')
-    water_st = pd.read_csv(f'/home/song/Public/Song/Work/Thesis/data/hii-telemetering-batch-data-master/station_metadata-water-level.csv')
-    weather_st = pd.read_csv(f'/home/song/Public/Song/Work/Thesis/data/hii-telemetering-weather-data-master/station_metadata.csv')
+    rain_st = pd.read_csv(f'./data/hii-telemetering-batch-data-master/station_metadata-rain.csv')
+    water_st = pd.read_csv(f'./data/hii-telemetering-batch-data-master/station_metadata-water-level.csv')
+    weather_st = pd.read_csv(f'./data/hii-telemetering-weather-data-master/station_metadata.csv')
 
-    path_rain = "/home/song/Public/Song/Work/Thesis/data/hii-telemetering-batch-data-master/rain2007-2020/"
-    path_water = "/home/song/Public/Song/Work/Thesis/data/hii-telemetering-batch-data-master/water-level2007-2020/"
-    path_weather = "/home/song/Public/Song/Work/Thesis/data/hii-telemetering-weather-data-master/*/*/"
-    path_dam = '/home/song/Public/Song/Work/Thesis/data/Dam/clean.csv'
+    path_rain = "./data/hii-telemetering-batch-data-master/rain2007-2020/"
+    path_water = "./data/hii-telemetering-batch-data-master/water-level2007-2020/"
+    path_weather = "./data/hii-telemetering-weather-data-master/*/*/"
+    path_dam = './data/Dam/clean.csv'
 
     def __init__(self,load_all=True):
         print("START LOADING DATA 2012-2020(July)")
