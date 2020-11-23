@@ -81,6 +81,13 @@ def record_list_result(syn,mode,trainY,testY,trainPredict,testPredict,target,bat
         plt.savefig(save_path+'/Plot_{}_{}{}.png'.format(syn,mode,d+1), dpi=300, bbox_inches='tight') 
         plt.clf()
 
+        fig, ax = plt.subplots(figsize=(6.4, 4.8))
+        ax.scatter(Y_t, Yhat_t,color='red',marker='.')       
+        ax.plot([0, Y_t.max()], [0, Y_t.max()], 'b--', lw=2)
+        ax.set_xlabel('Actual')
+        ax.set_ylabel('Predicted')
+        ax.set_title('R2: %.3f' % (Tr2[d]))
+        plt.savefig(save_path+'/r2_{}_{}{}.png'.format(syn,mode,d+1), dpi=300, bbox_inches='tight') 
         ###### CSV output######
         idx=['Modelname','Feature','t_in','t_out','batchsize','mse','nse','r2','Test_mse','Test_nse','Test_r2']
         try:_df = pd.DataFrame(["{}_{}".format(syn,n_past),n_features,n_past,n_future,batch_size,mse[d], nse[d],r2[d],Tmse[d], Tnse[d],Tr2[d]],index=idx,columns=[syn])
@@ -116,6 +123,14 @@ def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,us
     plt.savefig(save_path+'/Plot_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
     plt.clf()
 
+    fig, ax = plt.subplots(figsize=(6.4, 4.8))
+    ax.scatter(testY, testPredict,color='red',marker='.')       
+    ax.plot([0, testY.max()], [0, testY.max()], 'b--', lw=2)
+    ax.set_xlabel('Actual')
+    ax.set_ylabel('Predicted')
+    ax.set_title('R2: %.3f' % (Tr2))
+    plt.savefig(save_path+'/r2_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
+        
     ###### CSV output######
     idx=['Modelname','Feature','t_in','t_out','usetime','mse','nse','r2','Test_mse','Test_nse','Test_r2']
     _df = pd.DataFrame(["{}_{}".format(syn,n_past),n_features,n_past,n_future,use_time,mse, nse,r2,Tmse, Tnse,Tr2],index=idx,columns=[syn])

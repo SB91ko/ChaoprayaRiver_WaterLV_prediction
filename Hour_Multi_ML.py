@@ -79,7 +79,6 @@ def svr():
     time_ = time.time() - start_time
     return trainPredict,testPredict,time_
 
-
 def forecast_accuracy(forecast, actual,title):
     mape = np.mean(np.abs(forecast - actual)/np.abs(actual))  # MAPE
     
@@ -95,8 +94,6 @@ def forecast_accuracy(forecast, actual,title):
             'mpe': mpe, 'corr':corr}
     result =  pd.Series(result,name=title)
     return result
-
-
 ###########################################
 loading = instant_data()
 df,mode = loading.hourly_instant(),'hour'
@@ -106,7 +103,7 @@ st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
 if mode =='hour': n_past,n_future = 24*7,72
 elif mode =='day': n_past,n_future = 60,30
-##########################################
+###########################################
 
 if __name__ == "__main__":  
     for out_t_step in (range(1,n_future+1)):
@@ -115,18 +112,23 @@ if __name__ == "__main__":
         data = data.interpolate(limit=30000000,limit_direction='both').astype('float32') #interpolate neighbor first, for rest NA fill with mean()
         data[target]=data[target].shift(-out_t_step)
         data=data.dropna()
-        #### Corr selection##
-        # data = corr_select(data,TARGET)
+        
         #### MAR selection ##
-        data = call_mar(data,target,mode)
+        data = call_mar(data,target,mode,cutoff=0.3)
+        #### Corr selection##
+        # data = corr_select(data,target)
+        # save_path =host_path+'/Linear/'
+        # plot_corr(data,'mar_corr')
+        ##################################
         data = move_column_inplace(data,target,0)
+        
+        
         #### plot ###
         # plot_corr(data,'ML')
         X = data.drop(columns=[target])
         Y = data[target]
-
         trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
-        
+        print(trainX.shape,trainY.shape,testX.shape,testY.shape)
         ######################################
         save_path =host_path+'/Linear/'
         syn = 'linear'+str(out_t_step)
@@ -134,23 +136,21 @@ if __name__ == "__main__":
         batch_size = use_t
         n_features = 'Mars'
         n_past='all'
-        print(use_t)
+        print(out_t_step,'  time......',use_t)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future=1,)
+# ###################################################
+#     for out_t_step in (range(1,n_future+1)):
+        # data = df[start_p:stop_p]
+        # data['Day'] = data.index.dayofyear #add day
+        # data = data.interpolate(limit=30000000,limit_direction='both').astype('float32') #interpolate neighbor first, for rest NA fill with mean()
+        # data[target]=data[target].shift(-out_t_step)
+        # data=data.dropna()
+       
+        # data = move_column_inplace(data,target,0)
 
-###################################################
-    for out_t_step in (range(1,n_future+1)):
-        data = df[start_p:stop_p]
-        data['Day'] = data.index.dayofyear #add day
-        data = data.interpolate(limit=30000000,limit_direction='both').astype('float32') #interpolate neighbor first, for rest NA fill with mean()
-        data[target]=data[target].shift(-out_t_step)
-        data=data.dropna()
-
-        data = call_mar(data,target,mode)
-        data = move_column_inplace(data,target,0)
-
-        X = data.drop(columns=[target])
-        Y = data[target]
-        trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
+        # X = data.drop(columns=[target])
+        # Y = data[target]
+        # trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
         
         save_path =host_path+'/SVR/'
         syn = 'SVR'+str(out_t_step)
@@ -158,7 +158,6 @@ if __name__ == "__main__":
         batch_size = use_t
         n_features = 'Mars'
         n_past='all'
-        print(use_t)
+        print(out_t_step,'  time......',use_t)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future=1)
         ###################################
-        

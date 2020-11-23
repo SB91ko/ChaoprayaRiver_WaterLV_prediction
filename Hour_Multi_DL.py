@@ -1,7 +1,7 @@
 from DLtools.evaluation_rec import list_eva_error,record_list_result
 from DLtools.Data import del_less_col,instant_data,intersection,station_sel
 from DLtools.feature_sel import call_mar
-
+import time
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -37,8 +37,8 @@ def split_series(series, n_past, n_future):
 
 ###### SETTING AREA ################
 loading = instant_data()
-df,mode = loading.hourly_instant(),'hour'
-# df,mode = loading.daily_instant(),'day'
+# df,mode = loading.hourly_instant(),'hour'
+df,mode = loading.daily_instant(),'day'
 if mode =='hour': n_past,n_future = 24*7,72
 elif mode =='day': n_past,n_future = 60,30
 
@@ -84,21 +84,26 @@ def build_cnn1d():
     return model
 def run_code(model,batch_size,syn,zoom=True):
     global target,mode
+    start_time = time.time()
     verbose, epochs = 1, 120
     # n_timesteps, n_features, n_outputs = X_train.shape[1], X_train.shape[2], y_train.shape[1]
     history = model.fit(X_train,y_train,epochs=epochs,validation_data=(X_test,y_test),batch_size=batch_size,verbose=verbose,callbacks=callbacks)
+    time_ = time.time() - start_time
+
     plt.figure(figsize=(6.4, 4.8))
     plt.plot(history.history['loss'], label='train')
     plt.plot(history.history['val_loss'], label='test')
     plt.legend()
-    plt.savefig(save_path+'loss_{}.png'.format(syn), dpi=300, bbox_inches='tight') 
+    plt.savefig(save_path+'loss_{}_{:.3}.png'.format(syn,time_), dpi=300, bbox_inches='tight') 
     plt.clf()
 
     trainPredict = model.predict(X_train)
     testPredict = model.predict(X_test)
+    
     scale_y_test,scale_testPredict = record_list_result(syn,mode,y_train,y_test,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future,scaler_t=scaler_tar)
     model.save(save_path+'{}.h5'.format(syn))
     # plot_model(model, to_file='model_plot_hour_{}.png'.format(syn), show_shapes=True, show_layer_names=True)
+    
     if zoom==True:
         mid_ = int(len(scale_y_test)/2)
         fig,ax = plt.subplots(2,1,figsize=(20,5))
@@ -129,7 +134,10 @@ data['Day'] = data.index.dayofyear #add day
 data = data.interpolate(limit=300000000,limit_direction='both').astype('float32')#interpolate neighbor first, for rest NA fill with mean() #.apply(lambda x: x.fillna(x.mean()),axis=0)
 data[target].plot()
 plt.show()
+
 data_mar = call_mar(data,target,mode)
+print(data_mar.columns)
+
 # Move Y to first row
 data_mar = move_column_inplace(data_mar,target,0)
 n_features = len(data_mar.columns)
@@ -150,10 +158,10 @@ print(X_train.shape,y_train.shape)
 print(X_test.shape,y_test.shape)
 #######################################
 batch_size=128
-# run_code(build_cnn1d(),batch_size,'CNN_1D_MAR')
-# run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR')
-try:run_code(build_lstm(),batch_size,'LSTM_MAR')
-except:pass
+run_code(build_cnn1d(),batch_size,'CNN_1D_MAR')
+run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR')
+run_code(build_lstm(),batch_size,'LSTM_MAR')
+
 
 
 ###### SETTING ################
