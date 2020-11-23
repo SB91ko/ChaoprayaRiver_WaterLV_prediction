@@ -158,8 +158,8 @@ print(X_train.shape,y_train.shape)
 print(X_test.shape,y_test.shape)
 #######################################
 batch_size=128
-run_code(build_cnn1d(),batch_size,'CNN_1D_MAR')
-run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR')
+# run_code(build_cnn1d(),batch_size,'CNN_1D_MAR')
+# run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR')
 run_code(build_lstm(),batch_size,'LSTM_MAR')
 
 

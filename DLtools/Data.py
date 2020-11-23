@@ -222,11 +222,11 @@ class load_data:
 
 
 class instant_data:
-    rain='/home/song/Public/Song/Work/Thesis/data/instant_data/all/rain.csv'
-    water= '/home/song/Public/Song/Work/Thesis/data/instant_data/all/water.csv'
-    weather = '/home/song/Public/Song/Work/Thesis/data/instant_data/all/weather.csv'
-    dam = '/home/song/Public/Song/Work/Thesis/data/instant_data/all/dam.csv'
-    water_st = pd.read_csv(f'/home/song/Public/Song/Work/Thesis/data/hii-telemetering-batch-data-master/station_metadata-water-level.csv')
+    rain='./data/instant_data/all/rain.csv'
+    water= './data/instant_data/all/water.csv'
+    weather = './data/instant_data/all/weather.csv'
+    dam = './data/instant_data/all/dam.csv'
+    water_st = pd.read_csv(f'./data/hii-telemetering-batch-data-master/station_metadata-water-level.csv')
     def __init__(self):   
         self.df_w = self.df_maker(self.water)
         self.df_r = self.df_maker(self.rain)
@@ -274,20 +274,20 @@ def station_sel(st,mode):
         target='CPY015_wl'
         start_p = '2013-01-01'
         stop_p ='2017-12-31'
-        if mode =='hour': host_path = '/home/song/Public/Song/Work/Thesis/output/Hourly'
-        elif mode =='day': host_path = '/home/song/Public/Song/Work/Thesis/output/Daily'
+        if mode =='hour': host_path = './output/Hourly'
+        elif mode =='day': host_path = '.output/Daily'
     elif st == 'CPY012':
         target='CPY012_wl'
         start_p ="2014-02-01"
         stop_p ="2018-03-31"
-        if mode =='hour': host_path = '/home/song/Public/Song/Work/Thesis/output_cpy012/Hourly'
-        elif mode =='day': host_path = '/home/song/Public/Song/Work/Thesis/output_cpy012/Daily'
+        if mode =='hour': host_path = './output_cpy012/Hourly'
+        elif mode =='day': host_path = './output_cpy012/Daily'
     else: print('error nothing return from station sel') 
     return target,start_p,stop_p,host_path
 
 def clearnoise_wl(df_wl):
 ####clean noise####
-    water_st = pd.read_csv(f'/home/song/Public/Song/Work/Thesis/data/hii-telemetering-batch-data-master/station_metadata-water-level.csv')
+    water_st = pd.read_csv(f'./data/hii-telemetering-batch-data-master/station_metadata-water-level.csv')
     for col in df_wl.columns:
         station = water_st.loc[water_st['code']==col[:-3]]
         thr = station['ground_level']
@@ -300,7 +300,7 @@ def clearnoise_wl(df_wl):
 if __name__ == "__main__":
 
     # print("Test function load weather")
-    path='/home/song/Public/Song/Work/Thesis/data/instant_data/all/'
+    path='./data/instant_data/all/'
     loaddata = load_data(load_all=False)
     
     water=loaddata.water_data()
