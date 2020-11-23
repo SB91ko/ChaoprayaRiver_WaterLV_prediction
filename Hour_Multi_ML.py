@@ -1,16 +1,25 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 import seaborn as sns
+import time
 
+from sklearn import svm
 from sklearn import linear_model
+from statsmodels.tsa.vector_ar.var_model import VAR
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from sklearn.model_selection import train_test_split
-from DLtools.Data import instant_data,intersection,station_sel,del_less_col
-from DLtools.evaluation_rec import record_list_result
+from sklearn.metrics import r2_score
+from DLtools.Data import instant_data,intersection,station_sel
+from DLtools.evaluation_rec import record_alone_result,nashsutcliffe
 from DLtools.feature_sel import call_mar
 
+def move_column_inplace(df, col, pos):
+    col = df.pop(col)
+    df.insert(pos, col.name, col)
+    return df
 def high_corr(data,threshold=.95):
     """Eliminate first columns with high corr"""
     corr_matrix = data.corr().abs()
@@ -33,61 +42,123 @@ def corr_select(data,target):
     data.drop(columns=high_col,inplace=True)
     return data
 def plot_corr(data,syn):
-    global n_past
+    global out_t_step
     ##Display / save
-    corr = data.corr()
     plt.subplots(figsize=(10,10))
     mask = np.triu(data.corr())
     sns.heatmap(data.corr(), annot = True, vmin=-1, vmax=1, center= 0,mask=mask)
-    plt.savefig(save_path+'Corr_{}lag{}.png'.format(syn,n_past), bbox_inches='tight')
+    plt.savefig(save_path+'Corr_{}lag{}.png'.format(syn,out_t_step), bbox_inches='tight')
     return
 
-if __name__ == "__main__":
-    loading = instant_data()
-    ###########################################
-    # df = loading.hourly_instant()
-    df = loading.daily_instant()
-    syn = ''
-    mode = 'hour'
-    st = 'CPY012'
-    
-    target,start_p,stop_p,host_path=station_sel(st,mode)
-    save_path =host_path+'/DL/'
-    ##########################################
+def linear():
+    global trainX,trainY,testX,testY,syn
+    start_time = time.time()
+    regr = linear_model.LinearRegression()
+    regr.fit(trainX,trainY)
+    trainPredict = regr.predict(trainX)
+    testPredict = regr.predict(testX)
 
-    if mode =='hour': n_past,n_future = 24*7,24
-    elif mode =='day': n_past,n_future = 30,14
-    else: n_future=None; print('incorrect input')
+    trainPredict = pd.Series(data=(trainPredict),index=trainY.index)
+    testPredict = pd.Series(data=(testPredict),index=testY.index)
+    time_ = time.time() - start_time
+    return trainPredict,testPredict,time_
+
+def svr():
+    global trainX,trainY,testX,testY,syn
+    start_time = time.time()
+    svr = svm.SVR(kernel='rbf',C=1e3)
+    scale = StandardScaler()
+    pipe = Pipeline([('scaler', scale), ('svr', svr)])
+    
+    pipe.fit(trainX, trainY)
+    trainPredict = pipe.predict(trainX)
+    testPredict = pipe.predict(testX)
+
+    trainPredict = pd.Series(data=(trainPredict),index=trainY.index)
+    testPredict = pd.Series(data=(testPredict),index=testY.index)
+    time_ = time.time() - start_time
+    return trainPredict,testPredict,time_
 
 
-    data = df[start_p:stop_p]
-    data = del_less_col(data,ratio=.85).interpolate(limit=30000000,limit_direction='both').astype('float32')
-    data['Day'] = data.index.dayofyear #add day
+def forecast_accuracy(forecast, actual,title):
+    mape = np.mean(np.abs(forecast - actual)/np.abs(actual))  # MAPE
     
-    
-    for n_past in tqdm(range(1,n_future+1)):
-        data = df.astype('float32')#interpolate neighbor first, for rest NA fill with mean()
-        
-        data[target]=data[target].shift(-n_past).dropna()
-        
+    mae = np.mean(np.abs(forecast - actual))    # MAE
+    mpe = np.mean((forecast - actual)/actual)   # MPE
+    rmse = np.mean((forecast - actual)**2)**.5  # RMSE
+    mse = np.mean((forecast - actual)**2)       #MSE
+    corr = np.corrcoef(forecast, actual)[0,1]   # corr
+    nse = nashsutcliffe(actual,forecast)
+    try: r2 = r2_score(actual, forecast)
+    except: r2 = np.NaN
+    result = {'MSE':mse,'rmse':rmse,'R2':r2,'NSE':nse,'mape':mape,  'mae': mae,
+            'mpe': mpe, 'corr':corr}
+    result =  pd.Series(result,name=title)
+    return result
+
+
+###########################################
+loading = instant_data()
+df,mode = loading.hourly_instant(),'hour'
+# df,mode = loading.daily_instant(),'day'
+
+st = 'CPY012'
+target,start_p,stop_p,host_path=station_sel(st,mode)
+if mode =='hour': n_past,n_future = 24*7,72
+elif mode =='day': n_past,n_future = 60,30
+##########################################
+
+if __name__ == "__main__":  
+    for out_t_step in (range(1,n_future+1)):
+        data = df[start_p:stop_p]
+        data['Day'] = data.index.dayofyear #add day
+        data = data.interpolate(limit=30000000,limit_direction='both').astype('float32') #interpolate neighbor first, for rest NA fill with mean()
+        data[target]=data[target].shift(-out_t_step)
+        data=data.dropna()
         #### Corr selection##
         # data = corr_select(data,TARGET)
         #### MAR selection ##
         data = call_mar(data,target,mode)
-
+        data = move_column_inplace(data,target,0)
         #### plot ###
-        plot_corr(data,syn)
+        # plot_corr(data,'ML')
+        X = data.drop(columns=[target])
+        Y = data[target]
+
+        trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
+        
+        ######################################
+        save_path =host_path+'/Linear/'
+        syn = 'linear'+str(out_t_step)
+        trainPredict,testPredict,use_t = linear()
+        batch_size = use_t
+        n_features = 'Mars'
+        n_past='all'
+        print(use_t)
+        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future=1,)
+
+###################################################
+    for out_t_step in (range(1,n_future+1)):
+        data = df[start_p:stop_p]
+        data['Day'] = data.index.dayofyear #add day
+        data = data.interpolate(limit=30000000,limit_direction='both').astype('float32') #interpolate neighbor first, for rest NA fill with mean()
+        data[target]=data[target].shift(-out_t_step)
+        data=data.dropna()
+
+        data = call_mar(data,target,mode)
+        data = move_column_inplace(data,target,0)
 
         X = data.drop(columns=[target])
         Y = data[target]
-        trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.2, shuffle=False)
-
-        regr = linear_model.LinearRegression()
-        regr.fit(trainX,trainY)
-        trainPredict = regr.predict(trainX)
-        testPredict = regr.predict(testX)
-        # try:
-
-        record_list_result(trainY,testY,trainPredict,testPredict,syn)
-        # except:
-        #     print('error on ',n_past)
+        trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
+        
+        save_path =host_path+'/SVR/'
+        syn = 'SVR'+str(out_t_step)
+        trainPredict,testPredict,use_t = svr()
+        batch_size = use_t
+        n_features = 'Mars'
+        n_past='all'
+        print(use_t)
+        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future=1)
+        ###################################
+        

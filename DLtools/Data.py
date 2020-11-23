@@ -1,5 +1,9 @@
 import re,glob, os
-from DLtools import *
+import pandas as pd
+import numpy as np
+from tqdm import tqdm
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 
 def check_specific_col(df,column_name='rain1h'):
@@ -44,7 +48,7 @@ def related_basins(station_df,basins_list):
     station_df = station_df.loc[station_df['basin'].isin(basins_list)]
     return list(station_df['code'])
 
-def del_less_col(df,ratio=.65):
+def del_less_col(df,ratio=.5):
     print("\nBefore del col are...",len(df.columns))
     for col in df.columns:
         # print(col,tenki[col].count(),"|",len(tenki[col]),"|",tenki[col].isnull().sum())
@@ -153,8 +157,16 @@ class load_data:
             final_df = pd.concat([final_df,t_df],axis=1)
         # t_df = df.pivot(index='date', columns='station', values=col)
         # t_df.rename(columns=lambda x: x+"_w", inplace=True)
-        final_df = final_df["2013-01-01":"2020-07-31"]
-        return del_less_col(final_df)
+        final_df = del_less_col(final_df["2013-01-01":"2020-07-31"])
+        ####clean noise####
+        # for col in final_df.columns:
+        #     station = self.water_st.loc[self.water_st['code']==col[:-3]]
+        #     thr = station['ground_level']
+        #     try: 
+        #         thr = float(thr.values)
+        #         final_df.loc[final_df[col]<(thr)] = np.NaN
+        #     except: print('error',col,(thr.values))
+        return final_df
 
     def weather_data(self):
         basin_list = related_basins(self.weather_st,self.basins)
@@ -214,8 +226,8 @@ class instant_data:
     water= '/home/song/Public/Song/Work/Thesis/data/instant_data/all/water.csv'
     weather = '/home/song/Public/Song/Work/Thesis/data/instant_data/all/weather.csv'
     dam = '/home/song/Public/Song/Work/Thesis/data/instant_data/all/dam.csv'
-    def __init__(self):
-        
+    water_st = pd.read_csv(f'/home/song/Public/Song/Work/Thesis/data/hii-telemetering-batch-data-master/station_metadata-water-level.csv')
+    def __init__(self):   
         self.df_w = self.df_maker(self.water)
         self.df_r = self.df_maker(self.rain)
         self.df_wet = self.df_maker(self.weather)
@@ -230,8 +242,9 @@ class instant_data:
         rain1h = check_specific_col(self.df_wet,'rain1h')
         # close_bkk = check_specific_col(self.df_w,'BKK')
         solar = check_specific_col(self.df_wet,'solar')
-        
-        daily = [self.df_r,self.df_w.resample('d').mean(),self.df_wet.resample('d').mean(),self.df_d.resample('d').mean()]
+        df_wl = self.df_w.resample('d').mean()
+        clearnoise_wl(df_wl)
+        daily = [self.df_r,df_wl,self.df_wet.resample('d').mean(),self.df_d.resample('d').mean()]
         df = pd.concat(daily,axis=1)
         df = df.drop(rain1h+solar, axis=1)
         # df = df.drop(rain1h+close_bkk+solar, axis=1)
@@ -242,7 +255,9 @@ class instant_data:
         lim_and_del is flag  ready to use data(as target defined)
         limit data to 2013-2017 || del col ratio less than 80%
         """
-        hourly = [self.df_w.resample('h').mean(),self.df_wet]
+        df_wl = self.df_w.resample('h').mean()
+        clearnoise_wl(df_wl)
+        hourly = [df_wl,self.df_wet]
         df_h = pd.concat(hourly,axis=1)
 
         # close_bkk = check_specific_col(self.df_w,'BKK')
@@ -250,6 +265,9 @@ class instant_data:
         df_h = df_h.drop(solar, axis=1)
         # df_h = df_h.drop(close_bkk+solar, axis=1)
         return df_h
+
+
+
 def station_sel(st,mode):
     """Select and return station status setting"""
     if st == 'CPY015':
@@ -267,29 +285,40 @@ def station_sel(st,mode):
     else: print('error nothing return from station sel') 
     return target,start_p,stop_p,host_path
 
+def clearnoise_wl(df_wl):
+####clean noise####
+    water_st = pd.read_csv(f'/home/song/Public/Song/Work/Thesis/data/hii-telemetering-batch-data-master/station_metadata-water-level.csv')
+    for col in df_wl.columns:
+        station = water_st.loc[water_st['code']==col[:-3]]
+        thr = station['ground_level']
+        try: 
+            thr = float(thr.values)
+            df_wl[col].loc[df_wl[col]<(thr)] = np.NaN
+        except: pass
+    return 
 
 if __name__ == "__main__":
 
     # print("Test function load weather")
-    # path='/home/song/Public/Song/Work/Thesis/data/instant_data/all/'
-    # loaddata = load_data(load_all=False)
+    path='/home/song/Public/Song/Work/Thesis/data/instant_data/all/'
+    loaddata = load_data(load_all=False)
     
-    # water=loaddata.water_data()
-    # water.to_csv(path+'water.csv')
-
-    # weather=loaddata.weather_data()
-    # weather.to_csv(path+'weather.csv')
+    water=loaddata.water_data()
+    water.to_csv(path+'water.csv')
     
-    # rain = loaddata.rain_data()
-    # rain.to_csv(path+'rain.csv')
+    weather=loaddata.weather_data()
+    weather.to_csv(path+'weather.csv')
+    
+    rain = loaddata.rain_data()
+    rain.to_csv(path+'rain.csv')
 
-    # dam = loaddata.dam_data()
-    # dam.to_csv(path+'dam.csv')
-
-    load = instant_data()
-    df = load.daily_instant()
-    print(df.columns)
-    print(df.head())
+    dam = loaddata.dam_data()
+    dam.to_csv(path+'dam.csv')
+##############################################################
+    # load = instant_data()
+    # df = load.daily_instant()
+    # print(df.columns)
+    # print(df.head())
 
 
 # def convert_df(ori_df,col):

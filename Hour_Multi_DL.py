@@ -37,10 +37,9 @@ def split_series(series, n_past, n_future):
 
 ###### SETTING AREA ################
 loading = instant_data()
-# df,mode = loading.hourly_instant(),'hour'
-df,mode = loading.daily_instant(),'day'
-
-if mode =='hour': n_past,n_future = 24*7,24
+df,mode = loading.hourly_instant(),'hour'
+# df,mode = loading.daily_instant(),'day'
+if mode =='hour': n_past,n_future = 24*7,72
 elif mode =='day': n_past,n_future = 60,30
 
 st = 'CPY012'
@@ -125,10 +124,11 @@ callbacks = [callback_early_stopping,reduce_lr]
 ######################################################
 
 data = df[start_p:stop_p]
-data = del_less_col(data,ratio=.85)
+# data = del_less_col(data,ratio=.85)
 data['Day'] = data.index.dayofyear #add day
 data = data.interpolate(limit=300000000,limit_direction='both').astype('float32')#interpolate neighbor first, for rest NA fill with mean() #.apply(lambda x: x.fillna(x.mean()),axis=0)
-
+data[target].plot()
+plt.show()
 data_mar = call_mar(data,target,mode)
 # Move Y to first row
 data_mar = move_column_inplace(data_mar,target,0)
@@ -150,8 +150,8 @@ print(X_train.shape,y_train.shape)
 print(X_test.shape,y_test.shape)
 #######################################
 batch_size=128
-run_code(build_cnn1d(),batch_size,'CNN_1D_MAR')
-run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR')
+# run_code(build_cnn1d(),batch_size,'CNN_1D_MAR')
+# run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR')
 try:run_code(build_lstm(),batch_size,'LSTM_MAR')
 except:pass
 

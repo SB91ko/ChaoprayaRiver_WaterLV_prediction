@@ -24,6 +24,10 @@ def tsplot(y, title, lags=None, figsize=(10, 6)):
     pacf_ax = plt.subplot2grid(layout, (1, 1))
 
     y.plot(ax=ts_ax)
+    
+    ############## Addup ######################
+
+    ##################################
     ts_ax.set_title(title, fontsize=12, fontweight='bold')
     y.plot(ax=hist_ax, kind='hist', bins=25)
     hist_ax.set_title('Histogram')
@@ -31,6 +35,6 @@ def tsplot(y, title, lags=None, figsize=(10, 6)):
     sm.tsa.graphics.plot_pacf(y, lags=lags, ax=pacf_ax)
     sns.despine()
     plt.tight_layout()
-    plt.savefig('/home/song/Public/Song/Work/Thesis/Data_viz/expl_{}.png'.format(title), bbox_inches='tight')
-    plt.show()
+    plt.savefig('/home/song/Public/Song/Work/Thesis/Data_viz/0_tsExp_{}.png'.format(title), bbox_inches='tight')
+    # plt.show()
     return ts_ax, acf_ax, pacf_ax

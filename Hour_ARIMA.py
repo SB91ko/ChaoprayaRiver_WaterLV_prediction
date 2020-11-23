@@ -8,23 +8,24 @@ import numpy as np
 import matplotlib.pyplot as plt
 np.random.seed(42)
 
+###########################################
 loading = instant_data()
-# df =loading.hourly_instant()
-df = loading.daily_instant()
+# df,mode = loading.hourly_instant(),'hour'
+df,mode = loading.daily_instant(),'day'
 
-TARGET,start_p,stop_p,host_path = station_sel('CPY012')# target station
-save_path=host_path+'Daily/ARIMA/'
-
-#load previous error rec
-idx=['Modelname','Feature','n_in_time','batchsize','mse','nse','r2','Test_mse','Test_nse','Test_r2']
-try: error = pd.read_csv(host_path+'Daily/eval.csv',index_col=0)
-except: error = pd.DataFrame(index = idx);print('Make new evaluation record')
+st = 'CPY012'
+target,start_p,stop_p,host_path=station_sel(st,mode)
+if mode =='hour': n_past,n_future = 24*7,72
+elif mode =='day': n_past,n_future = 60,30
+##########################################
+save_path =host_path+'/ARIMA/'
 
 # Define target
 data = df[start_p:stop_p]
 # interpolate 72 hour(3days data)| accept 3 day missing
-data = data.interpolate(limit=72).apply(lambda x: x.fillna(x.mean()),axis=0).astype('float32')
-data = data[TARGET]
+data['Day'] = data.index.dayofyear #add day
+data = data.interpolate(limit=30000000,limit_direction='both').astype('float32') #interpolate neighbor first, for rest NA fill with mean()
+data_uni = data[target]
 
 # # Train_test spilt
 # ratio = int((data.shape[0])*.7)
