@@ -37,8 +37,8 @@ def split_series(series, n_past, n_future):
 
 ###### SETTING AREA ################
 loading = instant_data()
-# df,mode = loading.hourly_instant(),'hour'
-df,mode = loading.daily_instant(),'day'
+df,mode = loading.hourly_instant(),'hour'
+# df,mode = loading.daily_instant(),'day'
 if mode =='hour': n_past,n_future = 24*7,72
 elif mode =='day': n_past,n_future = 60,30
 

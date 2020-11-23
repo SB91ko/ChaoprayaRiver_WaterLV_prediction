@@ -83,7 +83,7 @@ def record_list_result(syn,mode,trainY,testY,trainPredict,testPredict,target,bat
 
         fig, ax = plt.subplots(figsize=(6.4, 4.8))
         ax.scatter(Y_t, Yhat_t,color='red',marker='.')       
-        ax.plot([0, Y_t.max()], [0, Y_t.max()], 'b--', lw=2)
+        ax.plot([0, Y_t.max()+1], [0, Y_t.max()+1], 'b--', lw=2)
         ax.set_xlabel('Actual')
         ax.set_ylabel('Predicted')
         ax.set_title('R2: %.3f' % (Tr2[d]))
@@ -125,7 +125,7 @@ def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,us
 
     fig, ax = plt.subplots(figsize=(6.4, 4.8))
     ax.scatter(testY, testPredict,color='red',marker='.')       
-    ax.plot([0, testY.max()], [0, testY.max()], 'b--', lw=2)
+    ax.plot([0, testY.max()+1], [0, testY.max()+1], 'b--', lw=2)
     ax.set_xlabel('Actual')
     ax.set_ylabel('Predicted')
     ax.set_title('R2: %.3f' % (Tr2))
