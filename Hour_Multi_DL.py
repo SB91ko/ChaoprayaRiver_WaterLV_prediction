@@ -157,10 +157,14 @@ X_test, y_test = split_xy(test,n_past,n_future)
 print(X_train.shape,y_train.shape)
 print(X_test.shape,y_test.shape)
 #######################################
-batch_size=128
-# run_code(build_cnn1d(),batch_size,'CNN_1D_MAR')
-# run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR')
-run_code(build_lstm(),batch_size,'LSTM_MAR')
+batch_size_list = [32,64,128,256,542]
+for batch_size in batch_size_list:
+    try:run_code(build_cnn1d(),batch_size,'CNN_1D_MAR_{}'.format(batch_size))
+    except:pass
+    try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR_{}'.format(batch_size))
+    except:pass
+    try:run_code(build_lstm(),batch_size,'LSTM_MAR_{}'.format(batch_size))
+    except:pass
 
 
 
@@ -183,7 +187,11 @@ train,test = data.iloc[:split_pt,:],data.iloc[split_pt:,:]
 X_train, y_train = split_xy(train,n_past,n_future)
 X_test, y_test = split_xy(test,n_past,n_future)
 #######################################
-batch_size = 128
-run_code(build_cnn1d(),batch_size,'CNN_1D')
-run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM')
-run_code(build_lstm(),batch_size,'LSTM')
+
+for batch_size in batch_size_list:
+    try:run_code(build_cnn1d(),batch_size,'CNN_1D_{}'.format(batch_size))
+    except:pass
+    try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_{}'.format(batch_size))
+    except:pass
+    try:run_code(build_lstm(),batch_size,'LSTM_{}'.format(batch_size))
+    except:pass

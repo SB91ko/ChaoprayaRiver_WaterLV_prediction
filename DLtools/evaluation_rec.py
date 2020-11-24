@@ -78,7 +78,7 @@ def record_list_result(syn,mode,trainY,testY,trainPredict,testPredict,target,bat
         try: plt.title('[{}] {}{}\n'.format(syn,mode,d+1)+'Water Level {} Forecast vs Actuals\n'.format(target)+'Train MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (mse[d],nse[d],r2[d])+'\nTest  MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (Tmse[d],Tnse[d],Tr2[d]))
         except: plt.title('[{}] {}{}\n'.format(syn,mode,d+1)+'Water Level {} Forecast vs Actuals\n'.format(target)+'Train MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (mse,nse,r2)+'\nTest  MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (Tmse,Tnse,Tr2))
         plt.legend()
-        plt.savefig(save_path+'/Plot_{}_{}{}.png'.format(syn,mode,d+1), dpi=300, bbox_inches='tight') 
+        plt.savefig(save_path+'/Plot_{}_{}{}_b{}.png'.format(syn,mode,d+1,batch_size), dpi=300, bbox_inches='tight') 
         plt.clf()
 
         fig, ax = plt.subplots(figsize=(6.4, 4.8))
@@ -87,7 +87,7 @@ def record_list_result(syn,mode,trainY,testY,trainPredict,testPredict,target,bat
         ax.set_xlabel('Actual')
         ax.set_ylabel('Predicted')
         ax.set_title('R2: %.3f' % (Tr2[d]))
-        plt.savefig(save_path+'/r2_{}_{}{}.png'.format(syn,mode,d+1), dpi=300, bbox_inches='tight') 
+        plt.savefig(save_path+'/r2_{}_{}{}_b{}.png'.format(syn,mode,d+1,batch_size), dpi=300, bbox_inches='tight') 
         ###### CSV output######
         idx=['Modelname','Feature','t_in','t_out','batchsize','mse','nse','r2','Test_mse','Test_nse','Test_r2']
         try:_df = pd.DataFrame(["{}_{}".format(syn,n_past),n_features,n_past,n_future,batch_size,mse[d], nse[d],r2[d],Tmse[d], Tnse[d],Tr2[d]],index=idx,columns=[syn])
