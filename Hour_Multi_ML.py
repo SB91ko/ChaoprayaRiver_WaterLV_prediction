@@ -123,8 +123,8 @@ def forecast_accuracy(forecast, actual,title):
     return result
 ###########################################
 loading = instant_data()
-df,mode = loading.hourly_instant(),'hour'
-# df,mode = loading.daily_instant(),'day'
+# df,mode = loading.hourly_instant(),'hour'
+df,mode = loading.daily_instant(),'day'
 
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
@@ -147,10 +147,10 @@ if __name__ == "__main__":
         data = call_mar(data,target,mode,cutoff=0.1)
         ##################################
         data = move_column_inplace(data,target,0)
-        
+        print(data.columns)
         #### plot ###
         save_path =host_path+'/corr/'
-        plot_corr(data,'mar')
+        plot_corr(data,'mar_')
         # plot_corr(data,'ML')
         X = data.drop(columns=[target])
         Y = data[target]
@@ -159,7 +159,7 @@ if __name__ == "__main__":
         
         ############ LINEAR ##################
         save_path =host_path+'/Linear/'
-        syn = 'linear'+str(out_t_step)
+        syn = 'linear_mars_'+str(out_t_step)
         trainPredict,testPredict,use_t = linear()
         use_time = use_t
         n_features = 'Mars'
@@ -168,7 +168,7 @@ if __name__ == "__main__":
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
         ########### VAR ################
         save_path =host_path+'/VAR/'
-        syn = 'VAR'+str(out_t_step)
+        syn = 'VAR_mars_'+str(out_t_step)
         trainPredict,testPredict,time_,train,test =var(data)
         use_time_ = use_t
         n_features = 'Mars'
@@ -176,15 +176,15 @@ if __name__ == "__main__":
         print(out_t_step,'  VAR time......',use_time_)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time_,save_path,n_past,n_features,n_future=1)
 
-        ######### SVR ################
-        save_path =host_path+'/SVR/'
-        syn = 'SVR'+str(out_t_step)
-        trainPredict,testPredict,use_t = svr()
-        use_time = use_t
-        n_features = 'Mars'
-        n_past='all'
-        print(out_t_step,'  SVR time......',use_t)
-        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        # ######### SVR ################
+        # save_path =host_path+'/SVR/'
+        # syn = 'SVR'+str(out_t_step)
+        # trainPredict,testPredict,use_t = svr()
+        # use_time = use_t
+        # n_features = 'Mars'
+        # n_past='all'
+        # print(out_t_step,'  SVR time......',use_t)
+        # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
         
 ################ MAR CORR ########################
     for out_t_step in (range(1,n_future+1)):
@@ -199,41 +199,43 @@ if __name__ == "__main__":
         #### Corr selection##
         data = corr_select(data,target)
         save_path =host_path+'/corr/'
-        plot_corr(data,'mar_corr')
+        plot_corr(data,'mar_corr_')
         ####################
         data = move_column_inplace(data,target,0)
-       
-        X = data.drop(columns=[target])
-        Y = data[target]
-        trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
-        print(trainX.shape,trainY.shape,testX.shape,testY.shape)
-        ############ LINEAR ##################
-        save_path =host_path+'/Linear/'
-        syn = 'linear_CORR'+str(out_t_step)
-        trainPredict,testPredict,use_t = linear()
-        use_time = use_t
-        n_features = 'Mars_CORR'
-        n_past='all'
-        print(out_t_step,'  LR time......',use_t)
-        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
-        ########### VAR ################
-        save_path =host_path+'/VAR/'
-        syn = 'VAR_CORR'+str(out_t_step)
-        trainPredict,testPredict,time_,train,test =var(data)
-        use_time_ = use_t
-        
-        n_past='all'
-        print(out_t_step,'  VAR CORR time......',use_time_)
-        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time_,save_path,n_past,n_features,n_future=1)
-        ######### SVR ################
-        save_path =host_path+'/SVR/'
-        syn = 'SVR_CORR'+str(out_t_step)
-        trainPredict,testPredict,use_t = svr()
-        use_time = use_t
-        n_features = 'Mars_CORR'
-        n_past='all'
-        print(out_t_step,'  SVR CORR time......',use_t)
-        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        if data.shape[1]>1: 
+                
+            X = data.drop(columns=[target])
+            Y = data[target]
+            trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
+            print(trainX.shape,trainY.shape,testX.shape,testY.shape)
+            ############ LINEAR ##################
+            save_path =host_path+'/Linear/'
+            syn = 'linear_Mars_CORR'+str(out_t_step)
+            trainPredict,testPredict,use_t = linear()
+            use_time = use_t
+            n_features = 'Mars_CORR'
+            n_past='all'
+            print(out_t_step,'  LR time......',use_t)
+            record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
+            ########### VAR ################
+            save_path =host_path+'/VAR/'
+            syn = 'VAR_Mars_CORR'+str(out_t_step)
+            trainPredict,testPredict,time_,train,test =var(data)
+            use_time_ = use_t
+            
+            n_past='all'
+            print(out_t_step,'  VAR CORR time......',use_time_)
+            record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time_,save_path,n_past,n_features,n_future=1)
+            ######### SVR ################
+            # save_path =host_path+'/SVR/'
+            # syn = 'SVR_Mars_CORR'+str(out_t_step)
+            # trainPredict,testPredict,use_t = svr()
+            # use_time = use_t
+            # n_features = 'Mars_CORR'
+            # n_past='all'
+            # print(out_t_step,'  SVR CORR time......',use_t)
+            # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        else: pass
 ################ CORR ########################
     for out_t_step in (range(1,n_future+1)):
         data = df[start_p:stop_p]
@@ -242,11 +244,10 @@ if __name__ == "__main__":
         data[target]=data[target].shift(-out_t_step)
         data=data.dropna()
         
-
         #### Corr selection##
         data_corr = corr_select(data,target)
         save_path =host_path+'/corr/'
-        plot_corr(data,'corr')
+        plot_corr(data,'corr_')
         ####################
         data = move_column_inplace(data,target,0)
        
@@ -259,7 +260,7 @@ if __name__ == "__main__":
         syn = 'linear_CORR'+str(out_t_step)
         trainPredict,testPredict,use_t = linear()
         use_time = use_t
-        n_features = 'Mars_CORR'
+        n_features = 'CORR'
         n_past='all'
         print(out_t_step,'  LR time......',use_t)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
@@ -273,11 +274,11 @@ if __name__ == "__main__":
         print(out_t_step,'  VAR CORR time......',use_time_)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time_,save_path,n_past,n_features,n_future=1)
         ######### SVR ################
-        save_path =host_path+'/SVR/'
-        syn = 'SVR_CORR'+str(out_t_step)
-        trainPredict,testPredict,use_t = svr()
-        use_time = use_t
-        n_features = 'Mars_CORR'
-        n_past='all'
-        print(out_t_step,'  SVR CORR time......',use_t)
-        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        # save_path =host_path+'/SVR/'
+        # syn = 'SVR_CORR'+str(out_t_step)
+        # trainPredict,testPredict,use_t = svr()
+        # use_time = use_t
+        # n_features = 'Mars_CORR'
+        # n_past='all'
+        # print(out_t_step,'  SVR CORR time......',use_t)
+        # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)

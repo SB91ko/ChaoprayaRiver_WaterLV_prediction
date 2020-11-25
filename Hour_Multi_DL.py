@@ -15,7 +15,28 @@ from tensorflow.keras.layers import Dense,Flatten,LSTM,RepeatVector,TimeDistribu
 from tensorflow.keras.callbacks import EarlyStopping
 
 np.random.seed(42)
-
+def corr_select(data,target):
+    def corr_w_Y(data,target,threshold= 0.8):
+        # correlation
+        corr_test = data.corr(method='pearson')[target]
+        corr_test = corr_test[(corr_test> threshold) | (corr_test< -threshold) ]
+        corr_test = corr_test.sort_values(ascending=False)
+        #corr_test =corr_test[1:] # eliminate Target it own
+        print(corr_test)
+        return corr_test
+    def high_corr_RM(data,threshold=.95):
+        """Eliminate first columns with high corr"""
+        corr_matrix = data.corr().abs()
+        # Select upper triangle of correlation matrix
+        upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(np.bool))
+        # Find index of feature columns with correlation greater than 0.95
+        to_drop = [column for column in upper.columns if any(upper[column] > threshold)]
+        return to_drop
+    col_feature = corr_w_Y(data,target,0.8).index
+    data = data[col_feature]
+    high_col = high_corr_RM(data.iloc[:,1:]) #exclude target it own
+    data = data.drop(columns=high_col)
+    return data
 def move_column_inplace(df, col, pos):
     col = df.pop(col)
     df.insert(pos, col.name, col)
@@ -157,7 +178,7 @@ X_test, y_test = split_xy(test,n_past,n_future)
 print(X_train.shape,y_train.shape)
 print(X_test.shape,y_test.shape)
 #######################################
-batch_size_list = [32,64,128,256,542]
+batch_size_list = [32,64,128,256,512]
 for batch_size in batch_size_list:
     try:run_code(build_cnn1d(),batch_size,'CNN_1D_MAR_{}'.format(batch_size))
     except:pass
@@ -167,8 +188,40 @@ for batch_size in batch_size_list:
     except:pass
 
 
+############# ALL FEATURE ##########################
+###### SETTING ################
+n_features = len(data.columns)
+
+# Move Y to first row
+data = move_column_inplace(data,target,0)
+# SCALE
+scaler_tar = MinMaxScaler()
+scaler_tar.fit(data[target].to_numpy().reshape(-1,1))
+scaler = MinMaxScaler()
+data[data.columns] = scaler.fit_transform(data[data.columns])
+
+# Train-Test split
+split_pt = int(data.shape[0]*.7)
+train,test = data.iloc[:split_pt,:],data.iloc[split_pt:,:]
+
+#Split XY
+X_train, y_train = split_xy(train,n_past,n_future)
+X_test, y_test = split_xy(test,n_past,n_future)
+#######################################
+for batch_size in batch_size_list:
+    try:run_code(build_cnn1d(),batch_size,'CNN_1D_{}'.format(batch_size))
+    except:pass
+    try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_{}'.format(batch_size))
+    except:pass
+    try:run_code(build_lstm(),batch_size,'LSTM_{}'.format(batch_size))
+    except:pass
+
 
 ###### SETTING ################
+#### MAR selection ##
+data = call_mar(data,target,mode,cutoff=0.3)
+#### Corr selection##
+data = corr_select(data,target)
 n_features = len(data.columns)
 
 # Move Y to first row
@@ -189,9 +242,9 @@ X_test, y_test = split_xy(test,n_past,n_future)
 #######################################
 
 for batch_size in batch_size_list:
-    try:run_code(build_cnn1d(),batch_size,'CNN_1D_{}'.format(batch_size))
+    try:run_code(build_cnn1d(),batch_size,'CNN_1D_MAR_CORR_{}'.format(batch_size))
     except:pass
-    try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_{}'.format(batch_size))
+    try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR_CORR_{}'.format(batch_size))
     except:pass
-    try:run_code(build_lstm(),batch_size,'LSTM_{}'.format(batch_size))
+    try:run_code(build_lstm(),batch_size,'LSTM_MAR_CORR_{}'.format(batch_size))
     except:pass
