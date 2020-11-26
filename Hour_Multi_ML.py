@@ -9,6 +9,7 @@ from sklearn import linear_model
 from statsmodels.tsa.vector_ar.var_model import VAR
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestRegressor 
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
@@ -79,6 +80,17 @@ def svr():
     testPredict = pd.Series(data=(testPredict),index=testY.index)
     time_ = time.time() - start_time
     return trainPredict,testPredict,time_
+def rf():
+    global trainX,trainY,testX,testY,syn
+    regressor = RandomForestRegressor(n_estimators = 100, random_state = 42) 
+    regressor.fit(trainX, trainY) 
+    trainPredict = regressor.predict(trainX)
+    testPredict = regressor.predict(testX)
+    start_time = time.time()
+    trainPredict = pd.Series(data=(trainPredict),index=trainY.index)
+    testPredict = pd.Series(data=(testPredict),index=testY.index)
+    time_ = time.time() - start_time
+    return trainPredict,testPredict,time_
 
 def var(data):
     start_time_ = time.time()
@@ -123,8 +135,8 @@ def forecast_accuracy(forecast, actual,title):
     return result
 ###########################################
 loading = instant_data()
-# df,mode = loading.hourly_instant(),'hour'
-df,mode = loading.daily_instant(),'day'
+df,mode = loading.hourly_instant(),'hour'
+# df,mode = loading.daily_instant(),'day'
 
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
@@ -176,7 +188,7 @@ if __name__ == "__main__":
         print(out_t_step,'  VAR time......',use_time_)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time_,save_path,n_past,n_features,n_future=1)
 
-        # ######### SVR ################
+        ######### SVR ################
         # save_path =host_path+'/SVR/'
         # syn = 'SVR'+str(out_t_step)
         # trainPredict,testPredict,use_t = svr()
@@ -186,6 +198,17 @@ if __name__ == "__main__":
         # print(out_t_step,'  SVR time......',use_t)
         # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
         
+        ######### RF ################
+        save_path =host_path+'/RF/'
+        syn = 'RF'+str(out_t_step)
+        trainPredict,testPredict,use_t = rf()
+        use_time = use_t
+        n_features = 'Mars'
+        n_past='all'
+        print(out_t_step,'  RF time......',use_t)
+        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        
+
 ################ MAR CORR ########################
     for out_t_step in (range(1,n_future+1)):
         data = df[start_p:stop_p]
@@ -208,7 +231,7 @@ if __name__ == "__main__":
             Y = data[target]
             trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
             print(trainX.shape,trainY.shape,testX.shape,testY.shape)
-            ############ LINEAR ##################
+            # ############ LINEAR ##################
             save_path =host_path+'/Linear/'
             syn = 'linear_Mars_CORR'+str(out_t_step)
             trainPredict,testPredict,use_t = linear()
@@ -226,15 +249,24 @@ if __name__ == "__main__":
             n_past='all'
             print(out_t_step,'  VAR CORR time......',use_time_)
             record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time_,save_path,n_past,n_features,n_future=1)
-            ######### SVR ################
-            # save_path =host_path+'/SVR/'
-            # syn = 'SVR_Mars_CORR'+str(out_t_step)
-            # trainPredict,testPredict,use_t = svr()
-            # use_time = use_t
-            # n_features = 'Mars_CORR'
-            # n_past='all'
-            # print(out_t_step,'  SVR CORR time......',use_t)
-            # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+            ######## SVR ################
+            save_path =host_path+'/SVR/'
+            syn = 'SVR_Mars_CORR'+str(out_t_step)
+            trainPredict,testPredict,use_t = svr()
+            use_time = use_t
+            n_features = 'Mars_CORR'
+            n_past='all'
+            print(out_t_step,'  SVR CORR time......',use_t)
+            record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+            ######## RF ################
+            save_path =host_path+'/RF/'
+            syn = 'RF_Mars_CORR'+str(out_t_step)
+            trainPredict,testPredict,use_t = rf()
+            use_time = use_t
+            n_features = 'Mars_CORR'
+            n_past='all'
+            print(out_t_step,'  RF CORR time......',use_t)
+            record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
         else: pass
 ################ CORR ########################
     for out_t_step in (range(1,n_future+1)):
@@ -244,7 +276,6 @@ if __name__ == "__main__":
         data[target]=data[target].shift(-out_t_step)
         data=data.dropna()
         
-        #### Corr selection##
         data_corr = corr_select(data,target)
         save_path =host_path+'/corr/'
         plot_corr(data,'corr_')
@@ -278,7 +309,16 @@ if __name__ == "__main__":
         # syn = 'SVR_CORR'+str(out_t_step)
         # trainPredict,testPredict,use_t = svr()
         # use_time = use_t
-        # n_features = 'Mars_CORR'
+        # n_features = 'CORR'
         # n_past='all'
         # print(out_t_step,'  SVR CORR time......',use_t)
         # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        ######### RF ################
+        save_path =host_path+'/RF/'
+        syn = 'RF_CORR'+str(out_t_step)
+        trainPredict,testPredict,use_t = rf()
+        use_time = use_t
+        n_features = 'CORR'
+        n_past='all'
+        print(out_t_step,'  RF CORR time......',use_t)
+        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)

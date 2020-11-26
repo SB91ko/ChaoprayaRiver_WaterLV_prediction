@@ -148,45 +148,73 @@ callback_early_stopping = EarlyStopping(monitor='val_loss',patience=10, verbose=
 reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-3 * 0.90 ** x)
 callbacks = [callback_early_stopping,reduce_lr]
 ######################################################
-
 data = df[start_p:stop_p]
 # data = del_less_col(data,ratio=.85)
 data['Day'] = data.index.dayofyear #add day
 data = data.interpolate(limit=300000000,limit_direction='both').astype('float32')#interpolate neighbor first, for rest NA fill with mean() #.apply(lambda x: x.fillna(x.mean()),axis=0)
 data[target].plot()
-plt.show()
+# plt.show()
 
-data_mar = call_mar(data,target,mode)
-print(data_mar.columns)
+# data_mar = call_mar(data,target,mode)
+# print(data_mar.columns)
 
+# # Move Y to first row
+# data_mar = move_column_inplace(data_mar,target,0)
+# n_features = len(data_mar.columns)
+# # SCALE
+# scaler_tar = MinMaxScaler()
+# scaler_tar.fit(data_mar[target].to_numpy().reshape(-1,1))
+# print(data_mar[target].to_numpy().reshape(-1,1).shape)
+# scaler = MinMaxScaler()
+# data_mar[data_mar.columns] = scaler.fit_transform(data_mar[data_mar.columns])
+
+# # Train-Test split
+# split_pt = int(data_mar.shape[0]*.7)
+# train,test = data_mar.iloc[:split_pt,:],data_mar.iloc[split_pt:,:]
+
+# X_train, y_train = split_xy(train,n_past,n_future)
+# X_test, y_test = split_xy(test,n_past,n_future)
+# print(X_train.shape,y_train.shape)
+# print(X_test.shape,y_test.shape)
+#######################################
+# batch_size_list = [256,512]
+# for batch_size in batch_size_list:
+#     try:run_code(build_cnn1d(),batch_size,'CNN_1D_MAR_{}'.format(batch_size))
+#     except:pass
+#     try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR_{}'.format(batch_size))
+#     except:pass
+#     try:run_code(build_lstm(),batch_size,'LSTM_MAR_{}'.format(batch_size))
+#     except:pass
+
+###### SETTING ################
+#### MAR selection ##
+data = call_mar(data,target,mode,cutoff=0.3)
+#### Corr selection##
+data = corr_select(data,target)
+n_features = len(data.columns)
 # Move Y to first row
-data_mar = move_column_inplace(data_mar,target,0)
-n_features = len(data_mar.columns)
+data = move_column_inplace(data,target,0)
 # SCALE
 scaler_tar = MinMaxScaler()
-scaler_tar.fit(data_mar[target].to_numpy().reshape(-1,1))
-print(data_mar[target].to_numpy().reshape(-1,1).shape)
+scaler_tar.fit(data[target].to_numpy().reshape(-1,1))
 scaler = MinMaxScaler()
-data_mar[data_mar.columns] = scaler.fit_transform(data_mar[data_mar.columns])
-
+data[data.columns] = scaler.fit_transform(data[data.columns])
 # Train-Test split
-split_pt = int(data_mar.shape[0]*.7)
-train,test = data_mar.iloc[:split_pt,:],data_mar.iloc[split_pt:,:]
+split_pt = int(data.shape[0]*.7)
+train,test = data.iloc[:split_pt,:],data.iloc[split_pt:,:]
 
+#Split XY
 X_train, y_train = split_xy(train,n_past,n_future)
 X_test, y_test = split_xy(test,n_past,n_future)
-print(X_train.shape,y_train.shape)
-print(X_test.shape,y_test.shape)
 #######################################
-batch_size_list = [32,64,128,256,512]
+batch_size_list = [64,128,256,512]
 for batch_size in batch_size_list:
-    try:run_code(build_cnn1d(),batch_size,'CNN_1D_MAR_{}'.format(batch_size))
+    try:run_code(build_cnn1d(),batch_size,'CNN_1D_MAR_CORR_{}'.format(batch_size))
     except:pass
-    try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR_{}'.format(batch_size))
+    try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR_CORR_{}'.format(batch_size))
     except:pass
-    try:run_code(build_lstm(),batch_size,'LSTM_MAR_{}'.format(batch_size))
+    try:run_code(build_lstm(),batch_size,'LSTM_MAR_CORR_{}'.format(batch_size))
     except:pass
-
 
 ############# ALL FEATURE ##########################
 ###### SETTING ################
@@ -208,43 +236,11 @@ train,test = data.iloc[:split_pt,:],data.iloc[split_pt:,:]
 X_train, y_train = split_xy(train,n_past,n_future)
 X_test, y_test = split_xy(test,n_past,n_future)
 #######################################
+batch_size_list = [128,256,512]
 for batch_size in batch_size_list:
     try:run_code(build_cnn1d(),batch_size,'CNN_1D_{}'.format(batch_size))
     except:pass
     try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_{}'.format(batch_size))
     except:pass
     try:run_code(build_lstm(),batch_size,'LSTM_{}'.format(batch_size))
-    except:pass
-
-
-###### SETTING ################
-#### MAR selection ##
-data = call_mar(data,target,mode,cutoff=0.3)
-#### Corr selection##
-data = corr_select(data,target)
-n_features = len(data.columns)
-
-# Move Y to first row
-data = move_column_inplace(data,target,0)
-# SCALE
-scaler_tar = MinMaxScaler()
-scaler_tar.fit(data[target].to_numpy().reshape(-1,1))
-scaler = MinMaxScaler()
-data[data.columns] = scaler.fit_transform(data[data.columns])
-
-# Train-Test split
-split_pt = int(data.shape[0]*.7)
-train,test = data.iloc[:split_pt,:],data.iloc[split_pt:,:]
-
-#Split XY
-X_train, y_train = split_xy(train,n_past,n_future)
-X_test, y_test = split_xy(test,n_past,n_future)
-#######################################
-
-for batch_size in batch_size_list:
-    try:run_code(build_cnn1d(),batch_size,'CNN_1D_MAR_CORR_{}'.format(batch_size))
-    except:pass
-    try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR_CORR_{}'.format(batch_size))
-    except:pass
-    try:run_code(build_lstm(),batch_size,'LSTM_MAR_CORR_{}'.format(batch_size))
     except:pass

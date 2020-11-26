@@ -113,16 +113,16 @@ def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,us
         pass
 
     plt.figure(figsize=(15,5))
-    plt.plot(trainY, label = "Actual")
-    plt.plot(trainPredict, label = "Predict")
-    
-    plt.plot(testY, label = "Actual_test")
-    plt.plot(testPredict, label = "Predict_test")
+    plt.plot(trainPredict, label = "Predict_train",color='g')
+    plt.plot(testPredict, label = "Predict_test",color='r')
+    plt.scatter(x=trainY.index,y=trainY,marker='.',label='Actual_train',alpha=0.5,)
+    plt.scatter(x=testY.index,y=testY,marker='.',label='Actual_test',alpha=0.5,)
+
     plt.title('[{}] {}\n'.format(syn,mode)+'Water Level {} Forecast vs Actuals\n'.format(target)+'Train MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (mse,nse,r2)+'\nTest  MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (Tmse,Tnse,Tr2))
-    plt.legend()
+    plt.legend(loc='upper left', fontsize=8)
     plt.savefig(save_path+'/Plot_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
     plt.clf()
-
+    ########### R-square ################
     fig, ax = plt.subplots(figsize=(6.4, 4.8))
     ax.scatter(testY, testPredict,color='red',marker='.')       
     ax.plot([0, testY.max()+1], [0, testY.max()+1], 'b--', lw=2)
