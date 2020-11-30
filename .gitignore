@@ -214,3 +214,8 @@ output_cpy012/Hourly/DL/Plot_En_Dec_LSTM_MAR_hour22.png
 output_cpy012/Hourly/DL/Plot_En_Dec_LSTM_MAR_hour23.png
 output_cpy012/Hourly/DL/Plot_En_Dec_LSTM_MAR_hour24.png
 output_cpy012/Hourly/DL/Plot_En_Dec_LSTM_MAR_zoom500data.png
+MAR/test_mar_01.csv
+MAR/test_mar_02.csv
+MAR/test_mar_03.csv
+day_MAR02.csv
+day_MAR03.csv
