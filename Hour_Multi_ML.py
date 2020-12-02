@@ -10,6 +10,7 @@ from statsmodels.tsa.vector_ar.var_model import VAR
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestRegressor 
+from sklearn.decomposition import PCA
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
@@ -33,10 +34,11 @@ def plot_corr(data,syn):
 def linear():
     global trainX,trainY,testX,testY,syn
     start_time = time.time()
-    regr = linear_model.LinearRegression()
-    regr.fit(trainX,trainY)
-    trainPredict = regr.predict(trainX)
-    testPredict = regr.predict(testX)
+    steps = [('scale',StandardScaler()),('pca', PCA(n_components = 8)), ('lr', linear_model.LinearRegression())]
+    pipe = Pipeline(steps=steps)
+    pipe.fit(trainX,trainY)
+    trainPredict = pipe.predict(trainX)
+    testPredict = pipe.predict(testX)
 
     trainPredict = pd.Series(data=(trainPredict),index=trainY.index)
     testPredict = pd.Series(data=(testPredict),index=testY.index)
@@ -47,9 +49,9 @@ def svr():
     global trainX,trainY,testX,testY,syn
     start_time = time.time()
     svr = svm.SVR(kernel='rbf',C=1e3)
-    scale = StandardScaler()
-    pipe = Pipeline([('scaler', scale), ('svr', svr)])
-    
+    steps = [('scale',StandardScaler()),('pca', PCA(n_components = 8)), ('svr', svr)]
+    pipe = Pipeline(steps=steps)
+
     pipe.fit(trainX, trainY)
     trainPredict = pipe.predict(trainX)
     testPredict = pipe.predict(testX)
@@ -60,16 +62,19 @@ def svr():
     return trainPredict,testPredict,time_
 def rf():
     global trainX,trainY,testX,testY,syn
-    regressor = RandomForestRegressor(n_estimators = 100) 
-    regressor.fit(trainX, trainY) 
-    trainPredict = regressor.predict(trainX)
-    testPredict = regressor.predict(testX)
     start_time = time.time()
+
+    rf = RandomForestRegressor(n_estimators = 100)
+    steps = [('scale',StandardScaler()),('pca', PCA(n_components =8)), ('rf', rf)]
+    pipe = Pipeline(steps=steps)
+    pipe.fit(trainX,trainY)
+
+    trainPredict = pipe.predict(trainX)
+    testPredict = pipe.predict(testX)
     trainPredict = pd.Series(data=(trainPredict),index=trainY.index)
     testPredict = pd.Series(data=(testPredict),index=testY.index)
     time_ = time.time() - start_time
     return trainPredict,testPredict,time_
-
 def var(data):
     start_time_ = time.time()
     # train,test = data[:int(0.7*(len(data)))],data[int(0.7*(len(data))):]
@@ -77,19 +82,21 @@ def var(data):
     split_date = '2017-01-01'
     train,test = data[:split_date],data[split_date:]
 
-    sc_data = StandardScaler()
-    sc_data.fit(data)
-    sc_train,sc_test = sc_data.transform(train),sc_data.transform(test)
-    # scale_data = sc_data.fit_transform(data)
-    # train,test = scale_data[:int(0.7*(len(scale_data)))],scale_data[int(0.7*(len(scale_data))):]
+    steps = [('scale',StandardScaler()),('pca', PCA(n_components =8))]
+    pipe = Pipeline(steps=steps)
+    pipe.fit(data)
+
+    train,test = data[:int(0.7*(len(data)))],data[int(0.7*(len(data))):]
+    sc_train,sc_test = pipe.transform(train),pipe.transform(test)
+
     model = VAR(endog=sc_train)
     model_fit = model.fit(9)
 
     trainPredict = model_fit.forecast(sc_train, steps=len(sc_train))
     testPredict = model_fit.forecast(sc_test, steps=len(sc_test))
     try:
-        trainPredict = sc_data.inverse_transform(trainPredict)
-        testPredict = sc_data.inverse_transform(testPredict)
+        trainPredict = pipe.inverse_transform(trainPredict)
+        testPredict = pipe.inverse_transform(testPredict)
 
         trainPredict = pd.Series(data=(trainPredict[:,0]),index=train.index)
         testPredict = pd.Series(data=(testPredict[:,0]),index=test.index)
@@ -136,87 +143,85 @@ elif mode =='day': n_past,n_future = 60,30
 ###########################################
 
 if __name__ == "__main__":  
-    cutoffs = [0.2,0.3]
-    for cutoff in cutoffs:
-    
-        for out_t_step in (range(1,n_future+1)):
+    for out_t_step in (range(1,n_future+1)):    
+        data = inti_data(df)
+        cutoff=0.2
+        #### MAR selection ####
+        data = call_mar(data,target,mode,cutoff=cutoff)
+        ##################################
+        data = move_column_inplace(data,target,0)
         
-            data = inti_data(df)
-            #### MAR selection ##
-            data = call_mar(data,target,mode,cutoff=cutoff)
-            ##################################
-            data = move_column_inplace(data,target,0)
-            print(data.columns)
-            #### plot #####
-            save_path =host_path+'/corr/'
-            plot_corr(data,'mar_{}_'.format(cutoff))
-            # plot_corr(data,'ML')
-            X = data.drop(columns=[target])
-            Y = data[target]
-            split_date = '2017-01-01'
-            trainX, testX = X[:split_date].dropna(),X[split_date:].dropna()
-            trainY, testY = Y[:split_date].dropna(),Y[split_date:].dropna()
-            
-            # trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
-            # print(trainX.shape,trainY.shape,testX.shape,testY.shape)
-            # ############ LINEAR ##################
-            save_path =host_path+'/Linear/'
-            syn = 'linear_mars_{}_{}'.format(cutoff,str(out_t_step))
-            trainPredict,testPredict,use_t = linear()
-            use_time = use_t
-            n_features = 'Mars_{}'.format(cutoff)
-            n_past='all'
-            print(cutoff,out_t_step,'  LR time......',use_t)
-            record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
-            
-            ######### VAR ################
-            data = inti_data(df)
-            X = data.drop(columns=[target])
-            Y = data[target]
-            split_date = '2017-01-01'
-            trainX, testX = X[:split_date],X[split_date:]
-            trainY, testY = Y[:split_date],Y[split_date:]
+        print(data.columns)
+        #### plot #####
+        save_path =host_path+'/corr/'
+        if out_t_step==0: plot_corr(data,'mar{}_pca_'.format(cutoff))
+        
+        X = data.drop(columns=[target])
+        Y = data[target]
+        split_date = '2017-01-01'
+        trainX, testX = X[:split_date].dropna(),X[split_date:].dropna()
+        trainY, testY = Y[:split_date].dropna(),Y[split_date:].dropna()
+        
+        # trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
+        # print(trainX.shape,trainY.shape,testX.shape,testY.shape)
+        # ############ LINEAR ##################
+        # save_path =host_path+'/Linear/'
+        # syn = 'linear_mars_{}_{}'.format(cutoff,str(out_t_step))
+        # trainPredict,testPredict,use_t = linear()
+        # use_time = use_t
+        # n_features = 'Mars_{}'.format(cutoff)
+        # n_past='all'
+        # print(cutoff,out_t_step,'  LR time......',use_t)
+        # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
+        
+        # # ######### VAR ################
+        # data = inti_data(df)
+        # X = data.drop(columns=[target])
+        # Y = data[target]
+        # split_date = '2017-01-01'
+        # trainX, testX = X[:split_date],X[split_date:]
+        # trainY, testY = Y[:split_date],Y[split_date:]
 
-            save_path =host_path+'/VAR/'
-            syn = 'VAR_mars_{}_{}'.format(cutoff,str(out_t_step))
-            trainPredict,testPredict,time_,train,test =var(data)
-            
-            n_features = 'Mars_{}'.format(cutoff)
-            n_past='all'
-            print(cutoff,out_t_step,'  VAR time......',time_)
-            record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,time_,save_path,n_past,n_features,n_future=1)
-            # ###### SVR ################
-            if cutoff > 0.2:
-                data = inti_data(df)
-                X = data.drop(columns=[target])
-                Y = data[target]
-                split_date = '2017-01-01'
-                trainX, testX = X[:split_date],X[split_date:]
-                trainY, testY = Y[:split_date],Y[split_date:]
-                save_path =host_path+'/SVR/'
-                syn = 'SVR_mars{}_{}'.format(cutoff,str(out_t_step))
-                trainPredict,testPredict,use_t = svr()
-                use_time = use_t
-                n_features = 'Mars'
-                n_past='all'
-                print(cutoff,out_t_step,'  SVR time......',use_t)
-                record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
-                
-            ######## RF ################
-            data = inti_data(df)
-            X = data.drop(columns=[target])
-            Y = data[target]
-            split_date = '2017-01-01'
-            trainX, testX = X[:split_date],X[split_date:]
-            trainY, testY = Y[:split_date],Y[split_date:]
-            save_path =host_path+'/RF/'
-            syn = 'RF_marr_{}_{}'.format(cutoff,str(out_t_step))
-            trainPredict,testPredict,use_t = rf()
-            use_time = use_t
-            n_features = 'Mars_{}'.format(cutoff)
-            n_past='all'
-            print(cutoff,out_t_step,'  RF time......',use_t)
-            record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        # save_path =host_path+'/VAR/'
+        # syn = 'VAR_mars_{}_{}'.format(cutoff,str(out_t_step))
+        # trainPredict,testPredict,time_,train,test =var(data)
+        
+        # n_features = 'Mars_{}'.format(cutoff)
+        # n_past='all'
+        # print(cutoff,out_t_step,'  VAR time......',time_)
+        # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,time_,save_path,n_past,n_features,n_future=1)
+        ###### SVR ################
+    
+        data = inti_data(df)
+        X = data.drop(columns=[target])
+        Y = data[target]
+        split_date = '2017-01-01'
+        trainX, testX = X[:split_date],X[split_date:]
+        trainY, testY = Y[:split_date],Y[split_date:]
+        save_path =host_path+'/SVR/'
+        syn = 'SVR_mars{}_{}'.format(cutoff,str(out_t_step))
+        trainPredict,testPredict,use_t = svr()
+        use_time = use_t
+        n_features = 'Mars_{}'.format(cutoff)
+        n_past='all'
+        print(cutoff,out_t_step,'  SVR time......',use_t)
+        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        
+        ######## RF ################
+        # data = inti_data(df)
+        # X = data.drop(columns=[target])
+        # Y = data[target]
+        # split_date = '2017-01-01'
+        # trainX, testX = X[:split_date],X[split_date:]
+        # trainY, testY = Y[:split_date],Y[split_date:]
+        # save_path =host_path+'/RF/'
+        # syn = 'RF_marr_{}_{}'.format(cutoff,str(out_t_step))
+        # trainPredict,testPredict,use_t = rf()
+        # use_time = use_t
+        # n_features = 'Mars_{}'.format(cutoff)
+        # n_past='all'
+        # print(cutoff,out_t_step,'  RF time......',use_t)
+        # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
 # ############### MAR CORR ########################
 #     for out_t_step in (range(1,n_future+1)):
 #         data = df[start_p:stop_p]

@@ -115,7 +115,6 @@ def plot_moonson_l(mode,save_path,trainY,testY,trainPredict,testPredict,syn):
     plt.tight_layout()
     plt.savefig(save_path+'/monsoon_line_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
   
-
 def monsoon_cal(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn):        
     m_trainPredict = monsoon_scope(trainPredict)
     m_testPredict = monsoon_scope(testPredict)
@@ -196,7 +195,7 @@ def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,
         error = pd.concat([error,_df],axis=1)
         error.to_csv(save_path+'/eval.csv')
     return testY,testPredict
-def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1):
+def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=False):
     mse, nse,r2 = real_eva_error(trainY, trainPredict,)
     Tmse, Tnse,Tr2 = real_eva_error(testY, testPredict,)
     try:
@@ -213,11 +212,22 @@ def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,us
                 'MSE_trian':mse,'NSE_train':nse,'R2_train':r2,'MSE_test':Tmse,'NSE_test':Tnse,'R2_test':Tr2}
     _df = pd.DataFrame.from_dict(data=dict_data, orient ='index')
 
-    try: error = pd.read_csv(save_path+'/eval.csv',index_col=0);print('LOAD SUCEESS')
+    try: error = pd.read_csv(save_path+'/eval.csv',index_col=0);print('LOAD eva SUCEESS')
     except: error = pd.DataFrame();print("cannot find rec")
-
     error = pd.concat([error,_df],axis=1)
     error.to_csv(save_path+'/eval.csv')
+
+    ##########################
+    if rec_result==True: 
+        try: result_csv = pd.read_csv(save_path+'/result.csv',index_col='date');print('LOAD result SUCEESS')
+        except: result_csv = pd.DataFrame();print("cannot find result rec")
+        res_train=pd.DataFrame({'model':syn,'Y':trainY,'Yhat':trainPredict,'type': 'train'})
+        res_test=pd.DataFrame({'model':syn,'Y':testY,'Yhat':testPredict,'type': 'test'})
+
+        result_ = pd.concat([res_train,res_test],axis=0)
+        result_csv = pd.concat([result_csv,result_],axis=1)
+        result_csv.to_csv(save_path+'/result.csv')
+    ######################
     return testY,testPredict
 
 #################################################################
