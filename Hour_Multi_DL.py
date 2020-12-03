@@ -216,10 +216,10 @@ train,test = data[:split_date],data[split_date:]
 X_train, y_train = split_xy(train,n_past,n_future)
 X_test, y_test = split_xy(test,n_past,n_future)
 #######################################
-batch_size_list = [64,128,256]
+batch_size_list = [128,256,64,32]
 for batch_size in batch_size_list:
-    try:run_code(build_cnn1d(),batch_size,'CNN_1D_{}'.format(batch_size))
-    except KeyboardInterrupt: pass
+    # try:run_code(build_cnn1d(),batch_size,'CNN_1D_{}'.format(batch_size))
+    # except KeyboardInterrupt: pass
     try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_{}'.format(batch_size))
     except KeyboardInterrupt: pass
     try:run_code(build_lstm(),batch_size,'LSTM_{}'.format(batch_size))
