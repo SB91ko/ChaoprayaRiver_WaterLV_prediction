@@ -266,8 +266,6 @@ class instant_data:
         # df_h = df_h.drop(close_bkk+solar, axis=1)
         return df_h
 
-
-
 def station_sel(st,mode):
     """Select and return station status setting"""
     if st == 'CPY015':
@@ -286,7 +284,6 @@ def station_sel(st,mode):
     return target,start_p,stop_p,host_path
 
 def clearnoise_wl(df_wl):
-####clean noise####
     water_st = pd.read_csv(f'./data/hii-telemetering-batch-data-master/station_metadata-water-level.csv')
     for col in df_wl.columns:
         station = water_st.loc[water_st['code']==col[:-3]]
@@ -314,11 +311,6 @@ if __name__ == "__main__":
 
     dam = loaddata.dam_data()
     dam.to_csv(path+'dam.csv')
-##############################################################
-    # load = instant_data()
-    # df = load.daily_instant()
-    # print(df.columns)
-    # print(df.head())
 
 
 # def convert_df(ori_df,col):

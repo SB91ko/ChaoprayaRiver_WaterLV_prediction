@@ -134,7 +134,7 @@ def inti_data(df):
 ###########################################
 loading = instant_data()
 df,mode = loading.hourly_instant(),'hour'
-# df,mode = loading.daily_instan t(),'day'
+# df,mode = loading.daily_instant(),'day'
 
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
@@ -166,10 +166,10 @@ if __name__ == "__main__":
         # print(trainX.shape,trainY.shape,testX.shape,testY.shape)
         # ############ LINEAR ##################
         # save_path =host_path+'/Linear/'
-        # syn = 'linear_mars_{}_{}'.format(cutoff,str(out_t_step))
+        # syn = 'linear_pca_{}_{}'.format(cutoff,str(out_t_step))
         # trainPredict,testPredict,use_t = linear()
         # use_time = use_t
-        # n_features = 'Mars_{}'.format(cutoff)
+        # n_features = 'MarsPca_{}'.format(cutoff)
         # n_past='all'
         # print(cutoff,out_t_step,'  LR time......',use_t)
         # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
@@ -183,14 +183,14 @@ if __name__ == "__main__":
         # trainY, testY = Y[:split_date],Y[split_date:]
 
         # save_path =host_path+'/VAR/'
-        # syn = 'VAR_mars_{}_{}'.format(cutoff,str(out_t_step))
+        # syn = 'VAR_pca_{}_{}'.format(cutoff,str(out_t_step))
         # trainPredict,testPredict,time_,train,test =var(data)
         
-        # n_features = 'Mars_{}'.format(cutoff)
+        # n_features = 'MarsPca_{}'.format(cutoff)
         # n_past='all'
         # print(cutoff,out_t_step,'  VAR time......',time_)
         # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,time_,save_path,n_past,n_features,n_future=1)
-        ###### SVR ################
+        ##### SVR ################
     
         data = inti_data(df)
         X = data.drop(columns=[target])
@@ -199,15 +199,15 @@ if __name__ == "__main__":
         trainX, testX = X[:split_date],X[split_date:]
         trainY, testY = Y[:split_date],Y[split_date:]
         save_path =host_path+'/SVR/'
-        syn = 'SVR_mars{}_{}'.format(cutoff,str(out_t_step))
+        syn = 'SVR_pca{}_{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,use_t = svr()
         use_time = use_t
-        n_features = 'Mars_{}'.format(cutoff)
+        n_features = 'MarsPca_{}'.format(cutoff)
         n_past='all'
         print(cutoff,out_t_step,'  SVR time......',use_t)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
         
-        ######## RF ################
+        ####### RF ################
         # data = inti_data(df)
         # X = data.drop(columns=[target])
         # Y = data[target]
@@ -215,10 +215,10 @@ if __name__ == "__main__":
         # trainX, testX = X[:split_date],X[split_date:]
         # trainY, testY = Y[:split_date],Y[split_date:]
         # save_path =host_path+'/RF/'
-        # syn = 'RF_marr_{}_{}'.format(cutoff,str(out_t_step))
+        # syn = 'RF_pca_{}_{}'.format(cutoff,str(out_t_step))
         # trainPredict,testPredict,use_t = rf()
         # use_time = use_t
-        # n_features = 'Mars_{}'.format(cutoff)
+        # n_features = 'MarsPca_{}'.format(cutoff)
         # n_past='all'
         # print(cutoff,out_t_step,'  RF time......',use_t)
         # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
