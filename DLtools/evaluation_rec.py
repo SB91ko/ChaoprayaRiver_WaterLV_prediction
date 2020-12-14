@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 
 def real_eva_error(Y,Y_hat):
     try: 
-        mse = np.mean((Y_hat - Y)**2)       #MSE
-        nse = nashsutcliffe(Y,Y_hat)
-        r2 = rsquared(Y,Y_hat)
+        mse = np.mean((Y_hat - Y)**2).astype('float32')       #MSE
+        nse = nashsutcliffe(Y,Y_hat).astype('float32')
+        r2 = rsquared(Y,Y_hat).astype('float32')
     except ValueError: mse,nse,r2 = np.NaN,np.NaN,np.NaN
     
     return mse,nse,r2
@@ -171,12 +171,18 @@ def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,
     # Tmse_l, Tnse_l,Tr2_l = list_eva_error(testY, testPredict,n_future)
     for d in range(n_future):
         st_idx = n_past+d
+        # split_date = '2017-01-01'
+        # Y_tr= pd.Series(data=trainY[:,d],index=df[:split_date].index[st_idx:len(trainY)+st_idx])
+        # Yhat_tr = pd.Series(data=(trainPredict[:,d].ravel()),index=df[:split_date].index[st_idx:len(trainY)+st_idx])        
+        # Y_t= pd.Series(data=testY[:,d],index=df[split_date:].index[st_idx:len(testY)+st_idx])
+        # Yhat_t = pd.Series(data=(testPredict[:,d].ravel()),index=df[split_date:].index[st_idx:len(testY)+st_idx])
+        ################## TEMPORARY TRIAL#############################
         
-        Y_tr= pd.Series(data=trainY[:,d],index=df[:'2017-01-01'].index[st_idx:len(trainY)+st_idx])
-        Yhat_tr = pd.Series(data=(trainPredict[:,d].ravel()),index=df[:'2017-01-01'].index[st_idx:len(trainY)+st_idx])        
-        Y_t= pd.Series(data=testY[:,d],index=df['2017-01-01':].index[st_idx:len(testY)+st_idx])
-        Yhat_t = pd.Series(data=(testPredict[:,d].ravel()),index=df['2017-01-01':].index[st_idx:len(testY)+st_idx])
-        
+        Y_tr= pd.Series(data=trainY[:,d])
+        Yhat_tr = pd.Series(data=(trainPredict[:,d].ravel()),)        
+        Y_t= pd.Series(data=testY[:,d],index=df[split_date:])
+        Yhat_t = pd.Series(data=(testPredict[:,d].ravel()))
+
         mse, nse,r2 = real_eva_error(Y_tr, Yhat_tr,)
         Tmse, Tnse,Tr2 = real_eva_error(Y_t, Yhat_t,)
         ########### Plot trian-test ##################

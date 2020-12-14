@@ -219,3 +219,16 @@ MAR/test_mar_02.csv
 MAR/test_mar_03.csv
 day_MAR02.csv
 day_MAR03.csv
+MAR/PCA_analysis_excludeTarget.png
+MAR/PCA_analysis_train.csv
+MAR/PCA_analysis_train.png
+MAR/pca_hour_excludeTarget.csv
+MAR/PCA_MinMax_all.csv
+MAR/PCA_MinMax_all.png
+MAR/PCA_MinMax_train.csv
+MAR/PCA_MinMax_train.png
+MAR/PCA_Std_all.csv
+MAR/PCA_Std_all.png
+MAR/PCA_Std_train.csv
+MAR/PCA_Std_train.png
+MAR/pca_hour_excludeTarget.csv
