@@ -215,7 +215,10 @@ def build_cnn1D():
 def run_code(model,batch_size,syn,zoom=False):
     global target,mode
     start_time = time.time()
-    verbose, epochs = 1, 100
+    print('*'*50)
+    print ( 'batch :', batch_size,'\nmodel :', syn)
+    print('*'*50)
+    verbose, epochs = 2, 100
     ################### Scale #######################
     def flatten(X):
         '''
@@ -291,12 +294,10 @@ print(
       '\ntrainY :',y_train.shape,           '     testY :',y_test.shape,)
 # # ######################################
 batch_size_list = [128,256]
+print( ' file')
 for batch_size in batch_size_list:
-    try: run_code(build_cnn_cnn(),batch_size,'t_wCnnCnn_{}'.format(batch_size))
-    except KeyboardInterrupt: pass    
-    try: run_code(build_cnn1d(),batch_size,'t_wCnn1d_{}'.format(batch_size))
-    except KeyboardInterrupt: pass
-    try: run_code(build_cnn_lstm(),batch_size,'t_wCNN_LSTM_{}'.format(batch_size))
-    except KeyboardInterrupt: pass
-    try: run_code(build_lstmlstm(),batch_size,'t_wLSTMLSTM_{}'.format(batch_size))
-    except KeyboardInterrupt: pass
+    run_code(build_cnn1d(),batch_size,'t_wCnn1d_{}'.format(batch_size))
+    run_code(build_cnn_cnn(),batch_size,'t_wCnnCnn_{}'.format(batch_size))
+    run_code(build_cnn_lstm(),batch_size,'t_wCNN_LSTM_{}'.format(batch_size))
+    run_code(build_lstmlstm(),batch_size,'t_wLSTMLSTM_{}'.format(batch_size))
+    

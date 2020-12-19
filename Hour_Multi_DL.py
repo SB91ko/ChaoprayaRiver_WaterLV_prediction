@@ -140,6 +140,7 @@ def build_ende_lstm():
     model.compile(loss='mse', optimizer=my_optimizer)
     model.summary()    
     return model
+    
 def build_cnn1d():
     global n_past,n_future,n_features
     model = Sequential()
@@ -152,6 +153,7 @@ def build_cnn1d():
     model.compile(optimizer=my_optimizer, loss='mse')    
     model.summary()
     return model
+
 def run_code(model,batch_size,syn,zoom=False):
     global target,mode,df
     

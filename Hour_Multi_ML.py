@@ -34,7 +34,7 @@ def plot_corr(data,syn):
 def linear():
     global trainX,trainY,testX,testY,syn
     start_time = time.time()
-    steps = [('scale',StandardScaler()),('pca', PCA(n_components = 8)), ('lr', linear_model.LinearRegression())]
+    steps = [('scale',StandardScaler()),('pca', PCA(n_components = n_pca)), ('lr', linear_model.LinearRegression())]
     pipe = Pipeline(steps=steps)
     pipe.fit(trainX,trainY)
     trainPredict = pipe.predict(trainX)
@@ -49,7 +49,7 @@ def svr():
     global trainX,trainY,testX,testY,syn
     start_time = time.time()
     svr = svm.SVR(kernel='rbf',C=1e3)
-    steps = [('scale',StandardScaler()),('pca', PCA(n_components = 8)), ('svr', svr)]
+    steps = [('scale',StandardScaler()),('pca', PCA(n_components = n_pca)), ('svr', svr)]
     pipe = Pipeline(steps=steps)
 
     pipe.fit(trainX, trainY)
@@ -65,7 +65,7 @@ def rf():
     start_time = time.time()
 
     rf = RandomForestRegressor(n_estimators = 100)
-    steps = [('scale',StandardScaler()),('pca', PCA(n_components =8)), ('rf', rf)]
+    steps = [('scale',StandardScaler()),('pca', PCA(n_components =n_pca)), ('rf', rf)]
     pipe = Pipeline(steps=steps)
     pipe.fit(trainX,trainY)
 
@@ -82,7 +82,7 @@ def var(data):
     split_date = '2017-01-01'
     train,test = data[:split_date],data[split_date:]
 
-    steps = [('scale',StandardScaler()),('pca', PCA(n_components =8))]
+    steps = [('scale',StandardScaler()),('pca', PCA(n_components =n_pca))]
     pipe = Pipeline(steps=steps)
     pipe.fit(data)
 
@@ -140,12 +140,13 @@ st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
 if mode =='hour': n_past,n_future = 24*7,72
 elif mode =='day': n_past,n_future = 60,30
+n_pca=5
 ###########################################
 
 if __name__ == "__main__":  
     for out_t_step in (range(1,n_future+1)):    
         data = inti_data(df)
-        cutoff=0.2
+        cutoff=0.3
         #### MAR selection ####
         data = call_mar(data,target,mode,cutoff=cutoff)
         ##################################
@@ -174,7 +175,7 @@ if __name__ == "__main__":
         # print(cutoff,out_t_step,'  LR time......',use_t)
         # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
         
-        # # ######### VAR ################
+        # ######### VAR ################
         # data = inti_data(df)
         # X = data.drop(columns=[target])
         # Y = data[target]
@@ -190,14 +191,14 @@ if __name__ == "__main__":
         # n_past='all'
         # print(cutoff,out_t_step,'  VAR time......',time_)
         # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,time_,save_path,n_past,n_features,n_future=1)
-        ##### SVR ################
+        #### SVR ################
     
-        data = inti_data(df)
-        X = data.drop(columns=[target])
-        Y = data[target]
-        split_date = '2017-01-01'
-        trainX, testX = X[:split_date],X[split_date:]
-        trainY, testY = Y[:split_date],Y[split_date:]
+        # data = inti_data(df)
+        # X = data.drop(columns=[target])
+        # Y = data[target]
+        # split_date = '2017-01-01'
+        # trainX, testX = X[:split_date],X[split_date:]
+        # trainY, testY = Y[:split_date],Y[split_date:]
         save_path =host_path+'/SVR/'
         syn = 'SVR_pca{}_{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,use_t = svr()
@@ -209,11 +210,11 @@ if __name__ == "__main__":
         
         ####### RF ################
         # data = inti_data(df)
-        # X = data.drop(columns=[target])
-        # Y = data[target]
-        # split_date = '2017-01-01'
-        # trainX, testX = X[:split_date],X[split_date:]
-        # trainY, testY = Y[:split_date],Y[split_date:]
+        # # X = data.drop(columns=[target])
+        # # Y = data[target]
+        # # split_date = '2017-01-01'
+        # # trainX, testX = X[:split_date],X[split_date:]
+        # # trainY, testY = Y[:split_date],Y[split_date:]
         # save_path =host_path+'/RF/'
         # syn = 'RF_pca_{}_{}'.format(cutoff,str(out_t_step))
         # trainPredict,testPredict,use_t = rf()

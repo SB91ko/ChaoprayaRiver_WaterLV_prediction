@@ -1,4 +1,4 @@
 {
-    "python.pythonPath": "/home/song/anaconda3/envs/tf/bin/python",
+    "python.pythonPath": "/home/song/anaconda3/envs/tf-gpu-cuda8/bin/python",
     "jupyter.jupyterServerType": "local"
 }
