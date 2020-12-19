@@ -552,7 +552,7 @@ verbose, epochs = 1, 100
 
 
 # save_path =host_path+'/Baseline_{}-{}'.format(n_past,n_future)
-save_path =host_path+'/Hybrid_trial_AutocAcD'
+save_path =host_path+'/Baseline_lstm'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 #####################################################
@@ -564,12 +564,14 @@ if flag_pca:
 else:
     n_features = 9
     minmax=True
-# ************* Trial  *************
 
-run_yolo('cAcDauto',32,minmax=minmax,flag_pca=flag_pca)
-run_yolo('cAcDauto',32,minmax=True,flag_pca=flag_pca)
-run_yolo('cAcDauto',64,minmax=minmax,flag_pca=flag_pca)
-run_yolo('cAcDauto',64,minmax=True,flag_pca=flag_pca)
+run_yolo('lstm',128,minmax=True,cAcD=False,flag_pca=flag_pca)
+run_yolo('lstm',64,minmax=True,cAcD=False,flag_pca=flag_pca)
+# ************* Trial  *************
+# run_yolo('cAcDauto',32,minmax=minmax,flag_pca=flag_pca)
+# run_yolo('cAcDauto',32,minmax=True,flag_pca=flag_pca)
+# # run_yolo('cAcDauto',64,minmax=minmax,flag_pca=flag_pca)
+# # run_yolo('cAcDauto',64,minmax=True,flag_pca=flag_pca)
 
 
 # # ************* TRIAL IMPROVE *************
@@ -594,8 +596,8 @@ else:
     n_features = 9
     minmax=True
 
-run_yolo('cAcDauto',32,minmax=minmax,flag_pca=flag_pca)
-run_yolo('cAcDauto',64,minmax=minmax,flag_pca=flag_pca)
+run_yolo('lstm',128,minmax=True,cAcD=False,flag_pca=flag_pca)
+run_yolo('lstm',64,minmax=True,cAcD=False,flag_pca=flag_pca)
 
 #################### DONT DELETE #####################
 # ************* BASE LINE CNN/AUTOEN *************
