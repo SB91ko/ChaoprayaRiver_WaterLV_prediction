@@ -558,9 +558,10 @@ callback_early_stopping = EarlyStopping(monitor='val_loss',patience=3, verbose=2
 reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-5 * 0.90 ** x)
 callbacks = [callback_early_stopping,reduce_lr]
 verbose, epochs = 1, 100
+save_path =host_path+'/Hybrid'
 ####################################################
 # save_path =host_path+'/Baseline_{}-{}'.format(n_past,n_future)
-save_path =host_path+'/Baseline_DL'
+
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 #####################################################
@@ -571,22 +572,29 @@ if flag_pca:
     minmax=False
 else:
     minmax=True
-# run_yolo('cnn',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-# run_yolo('ann',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-# run_yolo('lstm',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+run_yolo('cnnauto',128,minmax=minmax,flag_pca=flag_pca)
+run_yolo('annann',128,minmax=minmax,flag_pca=flag_pca)
+run_yolo('cnnlstm',128,minmax=minmax,flag_pca=flag_pca)
+
+run_yolo('cnnauto',128,minmax=True,flag_pca=flag_pca)
+run_yolo('annann',128,minmax=True,flag_pca=flag_pca)
+run_yolo('cnnlstm',128,minmax=True,flag_pca=flag_pca)
 
 
+flag_pca=False
+n_features = 15
 if flag_pca: 
     n_features = n_pca
     minmax=False
 else:
     minmax=True
-# run_yolo('cnn',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-# run_yolo('ann',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-# run_yolo('lstm',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+run_yolo('cnnauto',128,minmax=minmax,flag_pca=flag_pca)
+run_yolo('annann',128,minmax=minmax,flag_pca=flag_pca)
+run_yolo('cnnlstm',128,minmax=minmax,flag_pca=flag_pca)
 
+run_yolo('cnnauto',128,minmax=True,flag_pca=flag_pca)
+run_yolo('annann',128,minmax=True,flag_pca=flag_pca)
+run_yolo('cnnlstm',128,minmax=True,flag_pca=flag_pca)
 
 
 #################### DONT DELETE #####################

@@ -169,11 +169,13 @@ if __name__ == "__main__":
         cutoff=0.3
         
         data = call_data()
-        print(data.columns)
+        data['Y'] = data[target].shift(-out_t_step)
+        data = data.dropna
+
         #### plot #####
         if out_t_step==0: plot_corr(data,'mar{}'.format(cutoff))
-        X = data.iloc[:-out_t_step,:]
-        Y = data[target].shift(-out_t_step)
+        X = data.values
+        Y = data['Y']
         trainX, testX = X[:split_date].dropna(),X[split_date:].dropna()
         trainY, testY = Y[:split_date].dropna(),Y[split_date:].dropna()
         ######################################

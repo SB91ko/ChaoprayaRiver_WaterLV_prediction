@@ -554,7 +554,7 @@ stop_p = '2016/02/01'
 n_pca = 6
 n_features = 15
 target,start_p,_,host_path=station_sel(st,mode)
-
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
 #################################
 my_optimizer = SGD(lr=0.01, decay=0, momentum=0.9, nesterov=True)
 # my_optimizer = 'adam'
@@ -566,7 +566,7 @@ verbose, epochs = 1, 100
 
 
 # save_path =host_path+'/Baseline_{}-{}'.format(n_past,n_future)
-save_path =host_path+'/Baseline_DL_Yscale'
+save_path =host_path+'/Hybrid_Yscale'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 #####################################################
@@ -577,35 +577,28 @@ if flag_pca:
 else:
     minmax=True
 # ************* Trial  *************
+run_yolo('cnnauto',128,minmax=minmax,flag_pca=flag_pca)
+run_yolo('annann',128,minmax=minmax,flag_pca=flag_pca)
+run_yolo('cnnlstm',128,minmax=minmax,flag_pca=flag_pca)
 
+run_yolo('cnnauto',128,minmax=True,flag_pca=flag_pca)
+run_yolo('annann',128,minmax=True,flag_pca=flag_pca)
+run_yolo('cnnlstm',128,minmax=True,flag_pca=flag_pca)
 
-
-# run_yolo('cnn',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-# run_yolo('ann',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-# run_yolo('lstm',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-run_yolo('cnn',128,minmax=True,cAcD=False,flag_pca=flag_pca)
-run_yolo('ann',128,minmax=True,cAcD=False,flag_pca=flag_pca)
-run_yolo('lstm',128,minmax=True,cAcD=False,flag_pca=flag_pca)
-######### RESERVE
-#*** run_yolo('auto',128,minmax=True,cAcD=False,flag_pca=flag_pca)
-#*** run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 
 
 # =================================================================
 flag_pca=False
+n_features = 15
 if flag_pca: 
     n_features = n_pca
     minmax=False
 else:
     minmax=True
 
-run_yolo('cnn',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-run_yolo('ann',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-run_yolo('lstm',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-
-
-
+run_yolo('cnnauto',128,minmax=minmax,flag_pca=flag_pca)
+run_yolo('annann',128,minmax=minmax,flag_pca=flag_pca)
+run_yolo('cnnlstm',128,minmax=minmax,flag_pca=flag_pca)
 
 #################### DONT DELETE #####################
 # ************* BASE LINE CNN/AUTOEN *************
@@ -615,7 +608,5 @@ run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 # run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 # # ************* TRIAL IMPROVE *************
 # run_yolo('cnnauto',256,minmax=minmax,flag_pca=flag_pca)
-# run_yolo('cnnauto',256,minmax=minmax,flag_pca=flag_pca)
-
 # run_yolo('annann',256,minmax=minmax,cAcD=True,flag_pca=flag_pca)
 # run_yolo('cnnlstm',256,minmax=minmax,cAcD=True,flag_pca=flag_pca)

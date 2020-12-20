@@ -19,7 +19,7 @@ def plot_rsquare(mode,save_path,testY,testPredict,syn):
     ax.set_xlabel('Actual')
     ax.set_ylabel('Predicted')
     ax.set_title(syn+'\nR2: %.3f' % (Tr2))
-    plt.savefig(save_path+'/r2_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
+    plt.savefig(save_path+'/r2_{}_{}.png'.format(syn,mode), dpi=100, bbox_inches='tight') 
     fig.clear()
     plt.close(fig)
 
@@ -72,7 +72,7 @@ def plot_moonson(mode,save_path,trainY,testY,trainPredict,testPredict,syn):
     ax[1][1].legend()
 
     plt.tight_layout()
-    plt.savefig(save_path+'/monsoon_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
+    plt.savefig(save_path+'/monsoon_{}_{}.png'.format(syn,mode), dpi=50, bbox_inches='tight') 
     fig.clear()
     plt.close(fig)
 
@@ -118,7 +118,7 @@ def plot_moonson_l(mode,save_path,trainY,testY,trainPredict,testPredict,syn):
     ax[1][1].legend()
 
     plt.tight_layout()
-    plt.savefig(save_path+'/monsoon_line_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
+    plt.savefig(save_path+'/monsoon_line_{}_{}.png'.format(syn,mode), dpi=50, bbox_inches='tight') 
 
     fig.clear()
     plt.close(fig)
@@ -155,7 +155,7 @@ def plotgraph(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn):
 
     ax.set_title('[{}] {}\n'.format(syn,mode)+'Water Level {} Forecast vs Actuals\n'.format(target)+'Train MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (mse,nse,r2)+'\nTest  MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (Tmse,Tnse,Tr2))
     ax.legend(loc='upper left', fontsize=8)
-    plt.savefig(save_path+'/Plot_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
+    plt.savefig(save_path+'/Plot_{}_{}.png'.format(syn,mode), dpi=100, bbox_inches='tight') 
     fig.clf()
     fig.clear()
     plt.close(fig)
