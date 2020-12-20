@@ -172,7 +172,7 @@ if __name__ == "__main__":
         print(data.columns)
         #### plot #####
         if out_t_step==0: plot_corr(data,'mar{}'.format(cutoff))
-        X = data.iloc[:,:-out_t_step]
+        X = data.iloc[:-out_t_step,:]
         Y = data[target].shift(-out_t_step)
         trainX, testX = X[:split_date].dropna(),X[split_date:].dropna()
         trainY, testY = Y[:split_date].dropna(),Y[split_date:].dropna()
