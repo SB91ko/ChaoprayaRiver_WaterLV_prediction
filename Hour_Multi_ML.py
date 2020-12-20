@@ -195,13 +195,13 @@ if __name__ == "__main__":
         print(cutoff,out_t_step,'  VAR time......',time_)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,time_,save_path,n_past,n_features,n_future=1)
         ### SVR ################
-        syn = 'SVR_pca{}_{}'.format(cutoff,str(out_t_step))
-        trainPredict,testPredict,use_t = svr()
-        use_time = use_t
-        n_features = 'MarsPca_{}'.format(cutoff)
-        n_past='all'
-        print(cutoff,out_t_step,'  SVR time......',use_t)
-        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        # syn = 'SVR_pca{}_{}'.format(cutoff,str(out_t_step))
+        # trainPredict,testPredict,use_t = svr()
+        # use_time = use_t
+        # n_features = 'MarsPca_{}'.format(cutoff)
+        # n_past='all'
+        # print(cutoff,out_t_step,'  SVR time......',use_t)
+        # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
         ###### RF ################
         syn = 'RF_pca_{}_{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,use_t = rf()
