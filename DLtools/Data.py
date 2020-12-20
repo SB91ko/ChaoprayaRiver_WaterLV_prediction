@@ -277,8 +277,8 @@ def station_sel(st,mode):
     elif st == 'CPY012':
         target='CPY012_wl'
         start_p ="2014-02-01"
-        stop_p ="2018-03-31"
-        if mode =='hour': host_path = './output_cpy012/Hourly'
+        stop_p ="2016-11-21"
+        if mode =='hour': host_path = './CPY012/train_val_test/Hourly'
         elif mode =='day': host_path = './output_cpy012/Daily'
     else: print('error nothing return from station sel') 
     return target,start_p,stop_p,host_path

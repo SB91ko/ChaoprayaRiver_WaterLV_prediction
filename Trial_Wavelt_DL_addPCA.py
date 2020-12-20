@@ -40,6 +40,16 @@ def move_column_inplace(df, col, pos):
     col = df.pop(col)
     df.insert(pos, col.name, col)
     return df
+def history_plot(history_model,name):   
+    fig, ax = plt.subplots(figsize=(6.4, 4.8))
+    ax.plot (history_model.history['loss'])
+    ax.plot (history_model.history['val_loss'])
+    ax.set_title ('model loss:{}'.format(name))
+    ax.set_xlabel('epoch')
+    ax.legend(['train','val'],loc='upper left')
+    fig.savefig(save_path+'/loss_{}.png'.format(name), dpi=50, bbox_inches='tight') 
+    fig.clear()
+    plt.close(fig)
 ########################################
 #Wave  Split XY
 def Wavsplit_xy(data,n_past,n_future,pca):
@@ -400,15 +410,11 @@ def run_code(model,batch_size,syn,minmaxscaler,flag_pca):
     validataion = ([cAX_test, cDX_test],y_test)
     history = model.fit(x=[cAX_train, cDX_train], y=y_train,epochs=epochs,batch_size=batch_size,verbose=verbose,validation_data = validataion,callbacks=callbacks)
     ########### plot loss ########################
-    plt.figure(figsize=(6.4, 4.8))
-    plt.plot(history.history['loss'], label='train')
-    plt.plot(history.history['val_loss'], label='test')
-    plt.legend()
-    plt.savefig(save_path+'/loss_{}.png'.format(syn), dpi=100, bbox_inches='tight') 
-    plt.clf()
+    history_plot(history,syn)
     #################################################
     trainPredict = model.predict([cAX_train, cDX_train]).astype('float32')
     testPredict = model.predict([cAX_test, cDX_test]).astype('float32')
+    trainPredict,testPredict = trainPredict.reshape(y_train),testPredict.reshape(y_test)
     # y_train_ori = scaler_tar.inverse_transform(y_train)
     # trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train_ori.shape))
     # y_test_ori = scaler_tar.inverse_transform(y_test)
@@ -452,7 +458,8 @@ def build_autolstm_original():
     x = layers.LSTM(200, activation='relu',return_sequences=True)(x)
     x = layers.TimeDistributed(layers.Dense(100, activation='relu'))(x)
     x = layers.TimeDistributed(layers.Dense(1))(x)
-    model = keras.Model(inputs=[input], outputs=x)
+    out = layers.Reshape((-1,n_future))(x)
+    model = keras.Model(inputs=[input], outputs=out)
     model.compile(loss='mse', optimizer=my_optimizer)
     model.summary()    
     return model
@@ -501,21 +508,17 @@ def run_code_alone(model,batch_size,syn,cAcD,minmaxscaler,flag_pca):
     print(X_test.shape,y_test.shape)
     history = model.fit(X_train,y_train,epochs=epochs,validation_data=(X_test,y_test),batch_size=batch_size,verbose=verbose,callbacks=callbacks)
     ########### plot loss ########################
-    plt.figure(figsize=(6.4, 4.8))
-    plt.plot(history.history['loss'], label='train')
-    plt.plot(history.history['val_loss'], label='test')
-    plt.legend()
-    plt.savefig(save_path+'loss_{}.png'.format(syn), dpi=100, bbox_inches='tight') 
-    plt.clf()
+    history_plot(history,syn)
     #################################################
     trainPredict = model.predict(X_train).astype('float32')
     testPredict = model.predict(X_test).astype('float32')
+    trainPredict,testPredict = trainPredict.reshape(y_train),testPredict.reshape(y_test)
     # y_train_ori = scaler_tar.inverse_transform(y_train)
     # trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train_ori.shape))
     # y_test_ori = scaler_tar.inverse_transform(y_test)
     # testPredict = scaler_tar.inverse_transform(testPredict.reshape(y_test_ori.shape))
     y_train_ori,y_test_ori =y_train.astype('float32'),y_test.astype('float32')
-    model.save(save_path+'{}.h5'.format(syn))
+    model.save(save_path+'/{}.h5'.format(syn))
     record_list_result(syn,df_scaled,mode,y_train_ori,y_test_ori,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
     return 
 ###############################################################
@@ -539,8 +542,14 @@ mode='hour'
 if mode =='hour': n_past,n_future = 96,72 #NOTE chang to 24 in-72 out
 elif mode =='day': n_past,n_future = 60,30
 st = 'CPY012'
-target,start_p,stop_p,host_path=station_sel(st,mode)
-split_date = '2016-10-01'
+# #Full
+# split_date = '2016-01-18'
+# target,start_p,stop_p,host_path=station_sel(st,mode)
+# *********************2 Yr trail**********************
+split_date = '2015-06-11'
+stop_p = '2016/02/01'
+n_pca = 6
+target,start_p,_,host_path=station_sel(st,mode)
 #################################
 my_optimizer = SGD(lr=0.01, decay=0, momentum=0.9, nesterov=True)
 # my_optimizer = 'adam'
@@ -552,52 +561,42 @@ verbose, epochs = 1, 100
 
 
 # save_path =host_path+'/Baseline_{}-{}'.format(n_past,n_future)
-save_path =host_path+'/Baseline_lstm'
+save_path =host_path+'/Baseline_DL'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 #####################################################
 flag_pca=True
 if flag_pca: 
-    n_pca = 5
+    
     n_features = n_pca
     minmax=False
 else:
     n_features = 9
     minmax=True
 
-run_yolo('lstm',128,minmax=True,cAcD=False,flag_pca=flag_pca)
-run_yolo('lstm',64,minmax=True,cAcD=False,flag_pca=flag_pca)
-# ************* Trial  *************
-# run_yolo('cAcDauto',32,minmax=minmax,flag_pca=flag_pca)
-# run_yolo('cAcDauto',32,minmax=True,flag_pca=flag_pca)
-# # run_yolo('cAcDauto',64,minmax=minmax,flag_pca=flag_pca)
-# # run_yolo('cAcDauto',64,minmax=True,flag_pca=flag_pca)
 
-
-# # ************* TRIAL IMPROVE *************
-# run_yolo('annann',256,minmax=minmax,cAcD=True,flag_pca=flag_pca)
-# run_yolo('cnnlstm',256,minmax=True,cAcD=True,flag_pca=flag_pca)
-# run_yolo('cnnauto',256,minmax=minmax,flag_pca=flag_pca)
-# #### EXP2 ############
-# run_yolo('cAcDauto',256,minmax=True,flag_pca=flag_pca)
-# run_yolo('cAcDauto',256,minmax=minmax,flag_pca=flag_pca)
-# run_yolo('cnnauto_colab',32,minmax=True,flag_pca=flag_pca)
-# run_yolo('cnnauto_colab',32,minmax=minmax,flag_pca=flag_pca)
-
+# run_yolo('cnn',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+# run_yolo('ann',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+# run_yolo('lstm',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 
 
 
 flag_pca=False
 if flag_pca: 
-    n_pca = 5
     n_features = n_pca
     minmax=False
 else:
-    n_features = 9
+    n_features = 15
     minmax=True
 
-run_yolo('lstm',128,minmax=True,cAcD=False,flag_pca=flag_pca)
-run_yolo('lstm',64,minmax=True,cAcD=False,flag_pca=flag_pca)
+
+# run_yolo('cnn',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+# run_yolo('ann',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+# run_yolo('lstm',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+
+
 
 #################### DONT DELETE #####################
 # ************* BASE LINE CNN/AUTOEN *************

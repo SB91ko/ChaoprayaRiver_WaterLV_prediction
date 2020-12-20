@@ -7,7 +7,7 @@ def call_mar(data,target,mode,sel_t=None,cutoff=0.1):
         if mode == 'hour': MARfile='./MAR/featurelist_MAR_hourly_7d.csv'
         elif mode == 'day': MARfile='./MAR/featurelist_MAR_daily_7d.csv'
     elif target=='CPY012_wl':
-        if mode == 'hour': MARfile='./MAR/[CPY012]featurelist_MAR_hourly_Fullreport.csv'
+        if mode == 'hour': MARfile='./MAR_2/[CPY012]featurelist_MAR_hourly_Fullreport.csv'
         elif mode == 'day': MARfile='./MAR/[CPY012]featurelist_MAR_daily_Fullreport.csv'
     mar = pd.read_csv(MARfile)
     if sel_t!=None: mar = mar.loc[mar['timestep'] == sel_t]

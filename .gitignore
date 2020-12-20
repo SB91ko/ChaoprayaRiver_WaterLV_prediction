@@ -5,6 +5,7 @@ DLtools/__pycache__/*
 Old/*
 Data_viz/*
 MAR/spare/*
+CPY012/*
 output_cpy012/*
 output_cpy012/Hourly/*
 output_cpy012/Hourly/DL/*
@@ -232,3 +233,8 @@ MAR/PCA_Std_all.png
 MAR/PCA_Std_train.csv
 MAR/PCA_Std_train.png
 MAR/pca_hour_excludeTarget.csv
+MAR/[CPY012]featurelist_MAR_hourly_Fullreport.csv
+MAR/[CPY012]featurelist_MAR_hourly.csv
+MAR/pca_hour_excludeTarget.csv
+MAR_2/[CPY012]featurelist_MAR_hourly_Fullreport.csv
+MAR_2/[CPY012]featurelist_MAR_hourly.csv

@@ -2,7 +2,8 @@ from sklearn.metrics import mean_squared_error,r2_score
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-split_date = '2016-10-01'
+split_date = '2015-06-11'
+stop_p = '2016/02/01'
 
 def real_eva_error(Y,Y_hat):
     try: 
@@ -18,14 +19,14 @@ def plot_rsquare(mode,save_path,testY,testPredict,syn):
     m_testPredict = monsoon_scope(testPredict)
 
     fig, ax = plt.subplots(figsize=(6.4, 4.8))
-    ax.scatter(testY, testPredict,edgecolor='blue',facecolor='None',marker='o',label='other',alpha=0.3)       
-    ax.scatter(m_test, m_testPredict,edgecolor='red',facecolor='None',marker='o',label='monsoon',alpha=0.3)       
+    ax.scatter(testY, testPredict,edgecolor='blue',facecolor='None',marker='.',label='other',alpha=0.3)       
+    ax.scatter(m_test, m_testPredict,edgecolor='red',facecolor='None',marker='.',label='monsoon',alpha=0.3)       
     ax.plot([0, testY.max()+1], [0, testY.max()+1], 'b--', lw=1)
     ax.set_xlabel('Actual')
     ax.set_ylabel('Predicted')
     ax.set_title(syn+'\nR2: %.3f' % (Tr2))
-    plt.legend()
-    plt.savefig(save_path+'/r2_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
+    ax.legend(loc='upper left')
+    fig.savefig(save_path+'/r2_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
     fig.clear()
     plt.close(fig)
 
@@ -35,52 +36,6 @@ def monsoon_scope(df):
     # df.iloc[(df.index.month.isin(non_monsoon))]=np.NaN
     # return df.dropna()
     return df.iloc[(df.index.month.isin(monsoon))]
-
-# def plot_moonson(mode,save_path,trainY,testY,trainPredict,testPredict,syn):
-#     mse, nse,r2 = real_eva_error(trainY, trainPredict,)
-#     Tmse, Tnse,Tr2 = real_eva_error(testY, testPredict,)
-    
-#     fig,ax =  plt.subplots(2,2,figsize=(15,7))
-#     monsoon = [8,9,10]
-#     fig.autofmt_xdate(rotation=45)
-#     fig.suptitle('\nMonsoon season:'+syn+'\nTrain MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (mse,nse,r2)+'\nTest  MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (Tmse,Tnse,Tr2))
-#     sel_m = trainY.iloc[(trainY.index.month.isin(monsoon))]
-#     Tsel_m = trainPredict.iloc[(trainPredict.index.month.isin(monsoon))]
-
-#     sel_2014 = sel_m.iloc[(sel_m.index.year.isin([2014]))]
-#     Tsel_2014 = Tsel_m.iloc[(Tsel_m.index.year.isin([2014]))]
-#     ax[0][0].scatter(sel_2014.index,sel_2014,label='2014',alpha=0.2,edgecolor='blue',facecolor='None',marker='o')
-#     ax[0][0].plot(Tsel_2014,label='2014',color='g',lw=1)
-#     ax[0][0].set_title('(train) Year 2014')
-#     ax[0][0].legend()
-
-#     sel_2015 = sel_m.iloc[(sel_m.index.year.isin([2015]))]
-#     Tsel_2015 = Tsel_m.iloc[(Tsel_m.index.year.isin([2015]))]
-#     ax[0][1].scatter(sel_2015.index,sel_2015,label='2015',alpha=0.2,edgecolor='blue',facecolor='None',marker='o')
-#     ax[0][1].plot(Tsel_2015,label='2015',color='g',lw=1)
-#     ax[0][1].set_title('(train) Year 2015')
-#     ax[0][1].legend()
-    
-#     sel_2016 = sel_m.iloc[(sel_m.index.year.isin([2016]))]
-#     Tsel_2016 = Tsel_m.iloc[(Tsel_m.index.year.isin([2016]))]
-#     ax[1][0].scatter(sel_2016.index,sel_2016,label='2016',alpha=0.2,edgecolor='blue',facecolor='None',marker='o')
-#     ax[1][0].plot(Tsel_2016,label='2016',color='g',lw=1)
-#     ax[1][0].set_title('(train) Year 2016')
-#     ax[1][0].legend()
-
-#     sel_m = testY.iloc[(testY.index.month.isin(monsoon))]
-#     Tsel_m = testPredict.iloc[(testPredict.index.month.isin(monsoon))]
-#     sel_2017 = sel_m.iloc[(sel_m.index.year.isin([2017]))]
-#     Tsel_2017 = Tsel_m.iloc[(Tsel_m.index.year.isin([2017]))]
-#     ax[1][1].scatter(sel_2017.index,sel_2017,label='2017',alpha=0.2,edgecolor='red',facecolor='None',marker='o')
-#     ax[1][1].plot(Tsel_2017,label='2017',color='orange',lw=1)
-#     ax[1][1].set_title('(test) Year 2017')
-#     ax[1][1].legend()
-
-#     plt.tight_layout()
-#     plt.savefig(save_path+'/monsoon_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
-#     fig.clear()
-#     plt.close(fig)
 
 def plot_moonson_l(mode,save_path,trainY,testY,trainPredict,testPredict,syn):
     mse, nse,r2 = real_eva_error(monsoon_scope(trainY), monsoon_scope(trainPredict),)
@@ -97,21 +52,21 @@ def plot_moonson_l(mode,save_path,trainY,testY,trainPredict,testPredict,syn):
     Tsel_2014 = Tsel_m.iloc[(Tsel_m.index.year.isin([2014]))]
     ax[0][0].plot(sel_2014,label='Y_2014')
     ax[0][0].plot(Tsel_2014,label='Yhat_2014')
-    ax[0][0].set_title('(train) Year 2014')
+    ax[0][0].set_title(' Year 2014')
     ax[0][0].legend()
 
     sel_2015 = sel_m.iloc[(sel_m.index.year.isin([2015]))]
     Tsel_2015 = Tsel_m.iloc[(Tsel_m.index.year.isin([2015]))]
     ax[0][1].plot(sel_2015,label='Y_2015')
     ax[0][1].plot(Tsel_2015,label='Yhat_2015')
-    ax[0][1].set_title('(train) Year 2015')
+    ax[0][1].set_title('Year 2015')
     ax[0][1].legend()
     
     sel_2016 = sel_m.iloc[(sel_m.index.year.isin([2016]))]
     Tsel_2016 = Tsel_m.iloc[(Tsel_m.index.year.isin([2016]))]
     ax[1][0].plot(sel_2016,label='Y_2016')
     ax[1][0].plot(Tsel_2016,label='Yhat_2016')
-    ax[1][0].set_title('(train) Year 2016')
+    ax[1][0].set_title(' Year 2016')
     ax[1][0].legend()
 
     sel_m = testY.iloc[(testY.index.month.isin(monsoon))]
@@ -120,12 +75,11 @@ def plot_moonson_l(mode,save_path,trainY,testY,trainPredict,testPredict,syn):
     Tsel_2017 = Tsel_m.iloc[(Tsel_m.index.year.isin([2017]))]
     ax[1][1].plot(sel_2017,label='Y_2017',color='orange')
     ax[1][1].plot(Tsel_2017,label='Yhat_2017',color='red')
-    ax[1][1].set_title('(test) Year 2017')
+    ax[1][1].set_title('Year 2017')
     ax[1][1].legend()
 
     plt.tight_layout()
-    plt.savefig(save_path+'/monsoon_line_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
-
+    fig.savefig(save_path+'/monsoon_line_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
     fig.clear()
     plt.close(fig)
     
@@ -161,7 +115,7 @@ def plotgraph(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn):
 
     ax.set_title('[{}] {}\n'.format(syn,mode)+'Water Level {} Forecast vs Actuals\n'.format(target)+'Train MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (mse,nse,r2)+'\nTest  MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (Tmse,Tnse,Tr2))
     ax.legend(loc='upper left', fontsize=8)
-    plt.savefig(save_path+'/Plot_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
+    fig.savefig(save_path+'/Plot_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
     fig.clf()
     fig.clear()
     plt.close(fig)
