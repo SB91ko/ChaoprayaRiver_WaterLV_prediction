@@ -139,8 +139,8 @@ st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
 if mode =='hour': n_past,n_future = 96,72
 elif mode =='day': n_past,n_future = 60,30
-
-save_path =host_path+'/ML'
+#################################
+save_path =host_path+'/ML/'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 # *********************2 Yr trail**********************
@@ -166,22 +166,20 @@ def call_data():
 if __name__ == "__main__":  
 
     for out_t_step in (range(1,n_future+1)):    
-        
+        cutoff=0.3
         
         data = call_data()
         print(data.columns)
         #### plot #####
         if out_t_step==0: plot_corr(data,'mar{}'.format(cutoff))
-        
         X = data
         Y = data[target].shift(-out_t_step)
         trainX, testX = X[:split_date].dropna(),X[split_date:].dropna()
         trainY, testY = Y[:split_date].dropna(),Y[split_date:].dropna()
-        
+        ######################################
         # trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
         # print(trainX.shape,trainY.shape,testX.shape,testY.shape)
         ############ LINEAR ##################
-        save_path =host_path+'/Linear/'
         syn = 'linear_pca_{}_{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,use_t = linear()
         use_time = use_t
@@ -189,32 +187,14 @@ if __name__ == "__main__":
         n_past='all'
         print(cutoff,out_t_step,'  LR time......',use_t)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
-        
         ######### VAR ################
-        data = inti_data(df)
-        X = data.drop(columns=[target])
-        Y = data[target]
-        split_date = '2017-01-01'
-        trainX, testX = X[:split_date],X[split_date:]
-        trainY, testY = Y[:split_date],Y[split_date:]
-
-        save_path =host_path+'/VAR/'
         syn = 'VAR_pca_{}_{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,time_,train,test =var(data)
-        
         n_features = 'MarsPca_{}'.format(cutoff)
         n_past='all'
         print(cutoff,out_t_step,'  VAR time......',time_)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,time_,save_path,n_past,n_features,n_future=1)
         ### SVR ################
-    
-        data = inti_data(df)
-        X = data.drop(columns=[target])
-        Y = data[target]
-        split_date = '2017-01-01'
-        trainX, testX = X[:split_date],X[split_date:]
-        trainY, testY = Y[:split_date],Y[split_date:]
-        save_path =host_path+'/SVR/'
         syn = 'SVR_pca{}_{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,use_t = svr()
         use_time = use_t
@@ -222,15 +202,7 @@ if __name__ == "__main__":
         n_past='all'
         print(cutoff,out_t_step,'  SVR time......',use_t)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
-        
         ###### RF ################
-        data = inti_data(df)
-        # X = data.drop(columns=[target])
-        # Y = data[target]
-        # split_date = '2017-01-01'
-        # trainX, testX = X[:split_date],X[split_date:]
-        # trainY, testY = Y[:split_date],Y[split_date:]
-        save_path =host_path+'/RF/'
         syn = 'RF_pca_{}_{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,use_t = rf()
         use_time = use_t

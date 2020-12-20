@@ -413,13 +413,13 @@ def run_code(model,batch_size,syn,minmaxscaler,flag_pca):
     #################################################
     trainPredict = model.predict(Xtrain_).astype('float32')
     testPredict = model.predict(Xtest_).astype('float32')
-    trainPredict,testPredict = trainPredict.reshape(y_train),testPredict.reshape(y_test)
+    trainPredict,testPredict = trainPredict.reshape(y_train.shape),testPredict.reshape(y_test.shape)
     
     if minmaxscaler:
         y_train_ori = scaler_ytrain.inverse_transform(y_train)
-        trainPredict = scaler_ytrain.inverse_transform(trainPredict.reshape(y_train_ori.shape))
+        trainPredict = scaler_ytrain.inverse_transform(trainPredict)
         y_test_ori = scaler_ytest.inverse_transform(y_test)
-        testPredict = scaler_ytest.inverse_transform(testPredict.reshape(y_test_ori.shape))
+        testPredict = scaler_ytest.inverse_transform(testPredict)
     else:    y_train_ori,y_test_ori =y_train,y_test
 
     model.save(save_path+'/{}.h5'.format(syn))
@@ -514,11 +514,11 @@ def run_code_alone(model,batch_size,syn,cAcD,minmaxscaler,flag_pca):
     #################################################
     trainPredict = model.predict(X_train).astype('float32')
     testPredict = model.predict(X_test).astype('float32')
-    trainPredict,testPredict = trainPredict.reshape(y_train),testPredict.reshape(y_test)
+    trainPredict,testPredict = trainPredict.reshape(y_train.shape),testPredict.reshape(y_test.shape)
     # y_train_ori = scaler_tar.inverse_transform(y_train)
-    # trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train_ori.shape))
+    # trainPredict = scaler_tar.inverse_transform(trainPredict)
     # y_test_ori = scaler_tar.inverse_transform(y_test)
-    # testPredict = scaler_tar.inverse_transform(testPredict.reshape(y_test_ori.shape))
+    # testPredict = scaler_tar.inverse_transform(testPredict)
     y_train_ori,y_test_ori =y_train.astype('float32'),y_test.astype('float32')
     model.save(save_path+'/{}.h5'.format(syn))
     record_list_result(syn,df_mars,mode,y_train_ori,y_test_ori,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
@@ -552,6 +552,7 @@ st = 'CPY012'
 split_date = '2015-06-11'
 stop_p = '2016/02/01'
 n_pca = 6
+n_features = 15
 target,start_p,_,host_path=station_sel(st,mode)
 
 #################################
@@ -571,11 +572,9 @@ if not os.path.exists(save_path):
 #####################################################
 flag_pca=True
 if flag_pca: 
-    
     n_features = n_pca
     minmax=False
 else:
-    n_features = 9
     minmax=True
 # ************* Trial  *************
 
@@ -584,23 +583,21 @@ else:
 # run_yolo('cnn',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 # run_yolo('ann',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 # run_yolo('lstm',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
-run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 run_yolo('cnn',128,minmax=True,cAcD=False,flag_pca=flag_pca)
 run_yolo('ann',128,minmax=True,cAcD=False,flag_pca=flag_pca)
 run_yolo('lstm',128,minmax=True,cAcD=False,flag_pca=flag_pca)
-run_yolo('auto',128,minmax=True,cAcD=False,flag_pca=flag_pca)
+######### RESERVE
+#*** run_yolo('auto',128,minmax=True,cAcD=False,flag_pca=flag_pca)
+#*** run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 
 
 # =================================================================
 flag_pca=False
 if flag_pca: 
-    n_pca = 4
     n_features = n_pca
     minmax=False
 else:
-    n_features = 9
     minmax=True
-
 
 run_yolo('cnn',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 run_yolo('ann',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)

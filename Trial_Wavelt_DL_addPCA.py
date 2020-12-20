@@ -414,11 +414,11 @@ def run_code(model,batch_size,syn,minmaxscaler,flag_pca):
     #################################################
     trainPredict = model.predict([cAX_train, cDX_train]).astype('float32')
     testPredict = model.predict([cAX_test, cDX_test]).astype('float32')
-    trainPredict,testPredict = trainPredict.reshape(y_train),testPredict.reshape(y_test)
+    trainPredict,testPredict = trainPredict.reshape(y_train.shape),testPredict.reshape(y_test.shape)
     # y_train_ori = scaler_tar.inverse_transform(y_train)
-    # trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train_ori.shape))
+    # trainPredict = scaler_tar.inverse_transform(trainPredict)
     # y_test_ori = scaler_tar.inverse_transform(y_test)
-    # testPredict = scaler_tar.inverse_transform(testPredict.reshape(y_test_ori.shape))
+    # testPredict = scaler_tar.inverse_transform(testPredict)
     y_train_ori,y_test_ori =y_train,y_test
     model.save(save_path+'/{}.h5'.format(syn))
     record_list_result(syn,df_mars,mode,y_train_ori,y_test_ori,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
@@ -512,11 +512,11 @@ def run_code_alone(model,batch_size,syn,cAcD,minmaxscaler,flag_pca):
     #################################################
     trainPredict = model.predict(X_train).astype('float32')
     testPredict = model.predict(X_test).astype('float32')
-    trainPredict,testPredict = trainPredict.reshape(y_train),testPredict.reshape(y_test)
+    trainPredict,testPredict = trainPredict.reshape(y_train.shape),testPredict.reshape(y_test.shape)
     # y_train_ori = scaler_tar.inverse_transform(y_train)
-    # trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train_ori.shape))
+    # trainPredict = scaler_tar.inverse_transform(trainPredict)
     # y_test_ori = scaler_tar.inverse_transform(y_test)
-    # testPredict = scaler_tar.inverse_transform(testPredict.reshape(y_test_ori.shape))
+    # testPredict = scaler_tar.inverse_transform(testPredict)
     y_train_ori,y_test_ori =y_train.astype('float32'),y_test.astype('float32')
     model.save(save_path+'/{}.h5'.format(syn))
     record_list_result(syn,df_scaled,mode,y_train_ori,y_test_ori,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
@@ -539,7 +539,7 @@ def run_yolo(call,batch,minmax=False,cAcD=True,flag_pca=True):
     elif call=='cnncnn':run_code(build_cnn_cnn(),batch_size,'wCNNCNN_Tin{}_b{}'.format(n_past,batch_size),minmaxscaler=minmax,flag_pca=flag_pca)
 #####################################################
 mode='hour'
-if mode =='hour': n_past,n_future = 96,72 #NOTE chang to 24 in-72 out
+if mode =='hour': n_past,n_future = 96,72 
 elif mode =='day': n_past,n_future = 60,30
 st = 'CPY012'
 # #Full
@@ -549,6 +549,7 @@ st = 'CPY012'
 split_date = '2015-06-11'
 stop_p = '2016/02/01'
 n_pca = 6
+n_features = 15
 target,start_p,_,host_path=station_sel(st,mode)
 #################################
 my_optimizer = SGD(lr=0.01, decay=0, momentum=0.9, nesterov=True)
@@ -558,39 +559,29 @@ reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-5 * 0.90 ** x)
 callbacks = [callback_early_stopping,reduce_lr]
 verbose, epochs = 1, 100
 ####################################################
-
-
 # save_path =host_path+'/Baseline_{}-{}'.format(n_past,n_future)
 save_path =host_path+'/Baseline_DL'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 #####################################################
 flag_pca=True
+
 if flag_pca: 
-    
     n_features = n_pca
     minmax=False
 else:
-    n_features = 9
     minmax=True
-
-
 # run_yolo('cnn',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 # run_yolo('ann',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 # run_yolo('lstm',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 
 
-
-flag_pca=False
 if flag_pca: 
     n_features = n_pca
     minmax=False
 else:
-    n_features = 15
     minmax=True
-
-
 # run_yolo('cnn',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 # run_yolo('ann',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
 # run_yolo('lstm',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
