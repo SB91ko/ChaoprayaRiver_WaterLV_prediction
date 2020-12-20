@@ -172,7 +172,7 @@ if __name__ == "__main__":
         print(data.columns)
         #### plot #####
         if out_t_step==0: plot_corr(data,'mar{}'.format(cutoff))
-        X = data[:,:-out_t_step]
+        X = data.iloc[:,:-out_t_step]
         Y = data[target].shift(-out_t_step)
         trainX, testX = X[:split_date].dropna(),X[split_date:].dropna()
         trainY, testY = Y[:split_date].dropna(),Y[split_date:].dropna()
@@ -183,14 +183,14 @@ if __name__ == "__main__":
         syn = 'linear_pca_{}_{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,use_t = linear()
         use_time = use_t
-        n_features = 'MarsPca_{}'.format(cutoff)
+        n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
         n_past='all'
         print(cutoff,out_t_step,'  LR time......',use_t)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
         ######### VAR ################
         syn = 'VAR_pca_{}_{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,time_,train,test =var(data)
-        n_features = 'MarsPca_{}'.format(cutoff)
+        n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
         n_past='all'
         print(cutoff,out_t_step,'  VAR time......',time_)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,time_,save_path,n_past,n_features,n_future=1)
@@ -198,7 +198,7 @@ if __name__ == "__main__":
         # syn = 'SVR_pca{}_{}'.format(cutoff,str(out_t_step))
         # trainPredict,testPredict,use_t = svr()
         # use_time = use_t
-        # n_features = 'MarsPca_{}'.format(cutoff)
+        # n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
         # n_past='all'
         # print(cutoff,out_t_step,'  SVR time......',use_t)
         # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
@@ -206,125 +206,7 @@ if __name__ == "__main__":
         syn = 'RF_pca_{}_{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,use_t = rf()
         use_time = use_t
-        n_features = 'MarsPca_{}'.format(cutoff)
+        n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
         n_past='all'
         print(cutoff,out_t_step,'  RF time......',use_t)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
-# ############### MAR CORR ########################
-#     for out_t_step in (range(1,n_future+1)):
-#         data = df[start_p:stop_p]
-#         data['Day'] = data.index.dayofyear #add day
-#         data = data.interpolate(limit=30000000,limit_direction='both').astype('float32') #interpolate neighbor first, for rest NA fill with mean()
-#         data[target]=data[target].shift(-out_t_step)
-#         data=data.dropna(inplace=True)
-        
-#         #### MAR selection ##
-#         data = call_mar(data,target,mode,cutoff=0.3)
-#         #### Corr selection##
-#         data = hi_corr_select(data,target)
-#         save_path =host_path+'/corr/'
-#         plot_corr(data,'mar_corr_')
-#         ####################
-#         data = move_column_inplace(data,target,0)
-#         if data.shape[1]>1: 
-                
-#             X = data.drop(columns=[target])
-#             Y = data[target]
-#             split_date = '2017-01-01'
-#             trainX, testX = X[:split_date],X[split_date:]
-#             trainY, testY = Y[:split_date],Y[split_date:]
-
-#             # ############ LINEAR ##################
-#             save_path =host_path+'/Linear/'
-#             syn = 'linear_Mars_CORR'+str(out_t_step)
-#             trainPredict,testPredict,use_t = linear()
-#             use_time = use_t
-#             n_features = 'Mars_CORR'
-#             n_past='all'
-#             print(out_t_step,'  LR time......',use_t)
-#             record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
-#             ########### VAR ################
-#             save_path =host_path+'/VAR/'
-#             syn = 'VAR_Mars_CORR'+str(out_t_step)
-#             trainPredict,testPredict,time_,train,test =var(data)
-#             use_time_ = use_t
-            
-#             n_past='all'
-#             print(out_t_step,'  VAR CORR time......',use_time_)
-#             record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time_,save_path,n_past,n_features,n_future=1)
-#             ######## SVR ################
-#             save_path =host_path+'/SVR/'
-#             syn = 'SVR_Mars_CORR'+str(out_t_step)
-#             trainPredict,testPredict,use_t = svr()
-#             use_time = use_t
-#             n_features = 'Mars_CORR'
-#             n_past='all'
-#             print(out_t_step,'  SVR CORR time......',use_t)
-#             record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
-#             ######## RF ################
-#             save_path =host_path+'/RF/'
-#             syn = 'RF_Mars_CORR'+str(out_t_step)
-#             trainPredict,testPredict,use_t = rf()
-#             use_time = use_t
-#             n_features = 'Mars_CORR'
-#             n_past='all'
-#             print(out_t_step,'  RF CORR time......',use_t)
-#             record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
-#         else: pass
-############### CORR ########################
-    # for out_t_step in (range(1,n_future+1)):
-    #     data = df[start_p:stop_p]
-    #     data['Day'] = data.index.dayofyear #add day
-    #     data = data.interpolate(limit=30000000,limit_direction='both').astype('float32') #interpolate neighbor first, for rest NA fill with mean()
-    #     data[target]=data[target].shift(-out_t_step)
-    #     data.dropna(inplace=True)
-        
-    #     data_corr = hi_corr_select(data,target)
-    #     save_path =host_path+'/corr/'
-    #     plot_corr(data,'corr_')
-    #     ###################
-    #     data = move_column_inplace(data,target,0)
-       
-    #     X = data.drop(columns=[target])
-    #     Y = data[target]
-    #     trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
-    #     split_date = '2017-01-01'
-    #     trainX, testX = X[:split_date],X[split_date:]
-    #     trainY, testY = Y[:split_date],Y[split_date:]
-
-    #     ########## LINEAR ##################
-    #     save_path =host_path+'/Linear/'
-    #     syn = 'linear_CORR'+str(out_t_step)
-    #     trainPredict,testPredict,use_t = linear()
-    #     use_time = use_t
-    #     n_features = 'CORR'
-    #     n_past='all'
-    #     print(out_t_step,'  LR time......',use_t)
-    #     record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
-    #     ########### VAR ################
-    #     save_path =host_path+'/VAR/'
-    #     syn = 'VAR_CORR'+str(out_t_step)
-    #     trainPredict,testPredict,time_,train,test =var(data)
-    #     use_time_ = use_t
-        
-    #     n_past='all'
-    #     print(out_t_step,'  VAR CORR time......',use_time_)
-    #     record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time_,save_path,n_past,n_features,n_future=1)
-    #     ###### SVR ################
-    #     save_path =host_path+'/SVR/'
-    #     syn = 'SVR_CORR'+str(out_t_step)
-    #     trainPredict,testPredict,use_t = svr()
-    #     use_time = use_t
-    #     n_features = 'CORR'
-    #     n_past='all'
-    #     print(out_t_step,'  SVR CORR time......',use_t)
-    #     record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
-    #     ######## RF ################
-    #     save_path =host_path+'/RF/'
-    #     syn = 'RF_CORR'+str(out_t_step)
-    #     trainPredict,testPredict,use_t = rf()
-    #     use_time = use_t
-    #     n_features = 'CORR'
-    #     n_past='all'
-    #     print(out_t_step,'  RF CORR time......',use_t)
-    #     record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
