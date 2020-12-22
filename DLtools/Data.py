@@ -272,14 +272,14 @@ def station_sel(st,mode):
         target='CPY015_wl'
         start_p = '2013-01-01'
         stop_p ='2017-12-31'
-        if mode =='hour': host_path = './output/Hourly'
-        elif mode =='day': host_path = '.output/Daily'
+        if mode =='hour': host_path = './output/Hourly/'
+        elif mode =='day': host_path = '.output/Daily/'
     elif st == 'CPY012':
         target='CPY012_wl'
         start_p ="2014-02-01"
-        stop_p ="2016-11-21"
-        if mode =='hour': host_path = './CPY012/train_val_test/Hourly'
-        elif mode =='day': host_path = './output_cpy012/Daily'
+        stop_p ="2018-02-01"
+        if mode =='hour': host_path = './CPY012/full/'
+        elif mode =='day': host_path = './output_cpy012/Daily/'
     else: print('error nothing return from station sel') 
     return target,start_p,stop_p,host_path
 

@@ -1,3 +1,4 @@
+from tensorflow.python.ops.math_ops import truediv
 from DLtools.Trial_evaluation_rec import record_list_result
 from DLtools.Data import instant_data,station_sel
 from DLtools.feature_sel import call_mar
@@ -33,8 +34,9 @@ config.log_device_placement = True
 sess = tf.compat.v1.Session(config=config)
 tf.compat.v1.keras.backend.set_session(sess)
 #######################################
-def Preprocess_pca(input):
-    pipe = Pipeline([('scaler', StandardScaler()), ('pca',PCA(n_components =n_pca))])
+def Preprocess_pca(input,pca):
+    if pca:     pipe = Pipeline([('scaler', StandardScaler()), ('pca',PCA(n_components =n_pca))])
+    else: pipe = Pipeline([('scaler', MinMaxScaler())])
     return pipe.fit_transform(input)
 def move_column_inplace(df, col, pos):
     col = df.pop(col)
@@ -72,11 +74,8 @@ def Wavsplit_series_y(series, n_past, n_future,pca):
     #### PCA IMPLEMENT ##################
     try: series = series.values
     except: pass
+    pc_series = Preprocess_pca(series,pca)
 
-    if pca==True: 
-        pc_series = Preprocess_pca(series)
-    else:
-        pc_series=series
     ##########################
     cAx,cDx, y = list(), list(), list()
     for window_start in range(len(series)):
@@ -142,24 +141,18 @@ def Wavtrain_test_split_xy(input_df,pca):
 ######################################
 def split_xy(data,n_past,n_future,pca):
     x,y = split_series(data.values,n_past,n_future,pca)
-    if pca==True:
-        n_features = n_pca
-    elif pca==False:
-        n_features = data.shape[1]
-
+    if pca:                 n_features = n_pca
+    elif pca==False:        n_features = data.shape[1]
     x = x.reshape((x.shape[0], x.shape[1],n_features))
     y = y[:,:,0]
     return x,y
-def split_series(series, n_past, n_future,pca=False):
+def split_series(series, n_past, n_future,pca):
     # n_past ==> no of past observations
     # n_future ==> no of future observations 
     ######################
     try: series = series.values
     except: pass
-    if pca==True: 
-        pc_series = Preprocess_pca(series)
-    elif pca==False: 
-        pc_series=series
+    pc_series = Preprocess_pca(series,pca)
     ##########################
     X, y = list(), list()
     for window_start in range(len(series)):
@@ -186,17 +179,18 @@ def call_data():
     df = df[start_p:stop_p]
     data = df
     data = data.interpolate(limit=300000000,limit_direction='both').astype('float32')#interpolate neighbor first, for rest NA fill with mean() #.apply(lambda x: x.fillna(x.mean()),axis=0)
-    data[target].plot()
+    data['Day'] = data.index.dayofyear
     # # MARS
-    mars_cutoff = 0.3
+    mars_cutoff = 0.2
     data_mar = call_mar(data,target,mode,cutoff=mars_cutoff)
     data_mar = move_column_inplace(data_mar,target,0)
+    
     # # SCALE
     # scaler = MinMaxScaler()
     # df_scaled = pd.DataFrame(scaler.fit_transform(data_mar), columns=data_mar.columns,index=data_mar.index)
-    scaler_tar = MinMaxScaler()
-    scaler_tar.fit(data[target].to_numpy().reshape(-1,1))
-    return data_mar,scaler_tar
+    # scaler_tar = MinMaxScaler()
+    # scaler_tar.fit(data[target].to_numpy().reshape(-1,1))
+    return data_mar
 
 ####################################
 def flatten(X):
@@ -303,7 +297,6 @@ def build_cAcD_auto():
     model.compile(loss='mse', optimizer=my_optimizer)
     return model
 
-
 def build_cnn_lstm():
     global n_past,n_future,n_features
     inputA = keras.Input(shape=(n_past, int(n_features)), name="cA")
@@ -387,7 +380,7 @@ def run_code(model,batch_size,syn,minmaxscaler,flag_pca):
 
     ################### Scale #######################
 
-    df_mars,scaler_tar = call_data()   
+    df_mars = call_data()   
     cAX_train,cDX_train, y_train, cAX_test,cDX_test, y_test = Wavtrain_test_split_xy(df_mars,pca=flag_pca)
 
     ##############Scale or not####################
@@ -404,8 +397,9 @@ def run_code(model,batch_size,syn,minmaxscaler,flag_pca):
     else: pass
     #################################################
     print('*'*20,syn,'*'*20)
-    print("shape")
+    print("shape :")
     print(cAX_test.shape,cDX_test.shape,y_test.shape)
+    print('*'*20,syn,'*'*20)
     #################################################
     validataion = ([cAX_test, cDX_test],y_test)
     history = model.fit(x=[cAX_train, cDX_train], y=y_train,epochs=epochs,batch_size=batch_size,verbose=verbose,validation_data = validataion,callbacks=callbacks)
@@ -415,12 +409,8 @@ def run_code(model,batch_size,syn,minmaxscaler,flag_pca):
     trainPredict = model.predict([cAX_train, cDX_train]).astype('float32')
     testPredict = model.predict([cAX_test, cDX_test]).astype('float32')
     trainPredict,testPredict = trainPredict.reshape(y_train.shape),testPredict.reshape(y_test.shape)
-    # y_train_ori = scaler_tar.inverse_transform(y_train)
-    # trainPredict = scaler_tar.inverse_transform(trainPredict)
-    # y_test_ori = scaler_tar.inverse_transform(y_test)
-    # testPredict = scaler_tar.inverse_transform(testPredict)
     y_train_ori,y_test_ori =y_train,y_test
-    model.save(save_path+'/{}.h5'.format(syn))
+    # model.save(save_path+'/{}.h5'.format(syn))
     record_list_result(syn,df_mars,mode,y_train_ori,y_test_ori,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
     
 ####### ORIGINAL DEEP LEARNING ##########################
@@ -434,7 +424,7 @@ def build_ann_original():
     x = layers.Dense(n_future)(x)
     
     model = keras.Model(inputs=[input], outputs=x)
-    model.compile(loss='mse', optimizer=my_optimizer)
+    
     model.compile(optimizer=my_optimizer, loss='mse')    
     model.summary()
     return model
@@ -470,8 +460,8 @@ def build_cnn1d_original():
     x = layers.MaxPooling1D(pool_size=2)(x)
     x = layers.Flatten()(x)
     x = layers.Dense(100, activation='relu')(x)
-    x = layers.Dropout(0.3)(x)
-    x = layers.Dense(50, activation='relu')(x)
+    # x = layers.Dropout(0.3)(x)
+    # x = layers.Dense(50, activation='relu')(x)
     x = layers.Dense(n_future)(x)
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(optimizer=my_optimizer, loss='mse')    
@@ -479,18 +469,18 @@ def build_cnn1d_original():
     return model
 def run_code_alone(model,batch_size,syn,cAcD,minmaxscaler,flag_pca):
     global target,mode,callbacks    
-    df_scaled,scaler_tar = call_data()
+    df_scaled = call_data()
 
     ##############Wavelet or not############
-    if cAcD==True:
+    if cAcD:
         X_train,cDX_train, y_train, X_test,cDX_test, y_test = Wavtrain_test_split_xy(df_scaled,pca=flag_pca)
         if flag_pca==True:        syn= syn+'_wcA_PCA'
-        else: syn=syn+'_wcA_noPCA'
+        else: syn=syn+'_wcA'
 
     else: 
         X_train, y_train, X_test, y_test = train_test_split_xy(df_scaled,pca=flag_pca)
         if flag_pca==True:        syn= syn+'_PCA'
-        else: syn=syn+'_noPCA'
+        else:pass
     ##############Scale or not####################
     if minmaxscaler==True:
         scaler = MinMaxScaler().fit(flatten(X_train))
@@ -518,11 +508,11 @@ def run_code_alone(model,batch_size,syn,cAcD,minmaxscaler,flag_pca):
     # y_test_ori = scaler_tar.inverse_transform(y_test)
     # testPredict = scaler_tar.inverse_transform(testPredict)
     y_train_ori,y_test_ori =y_train.astype('float32'),y_test.astype('float32')
-    model.save(save_path+'/{}.h5'.format(syn))
+    # model.save(save_path+'/{}.h5'.format(syn))
     record_list_result(syn,df_scaled,mode,y_train_ori,y_test_ori,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
     return 
 ###############################################################
-def run_yolo(call,batch,minmax=False,cAcD=True,flag_pca=True):
+def run_yolo(call,batch,minmax=False,cAcD=False,flag_pca=True):
     batch_size= batch
     if call =='auto':   run_code_alone(build_autolstm_original(),batch_size,'Auto_Tin{}_b{}'.format(n_past,batch_size),cAcD=cAcD,minmaxscaler=minmax,flag_pca=flag_pca)
     elif call =='cnn': run_code_alone(build_cnn1d_original(),batch_size,'CNN_Tin{}_b{}'.format(n_past,batch_size),cAcD=cAcD,minmaxscaler=minmax,flag_pca=flag_pca)
@@ -539,18 +529,28 @@ def run_yolo(call,batch,minmax=False,cAcD=True,flag_pca=True):
     elif call=='cnncnn':run_code(build_cnn_cnn(),batch_size,'wCNNCNN_Tin{}_b{}'.format(n_past,batch_size),minmaxscaler=minmax,flag_pca=flag_pca)
 #####################################################
 mode='hour'
-if mode =='hour': n_past,n_future = 96,72 
+if mode =='hour': n_past,n_future = 24*7,72 
 elif mode =='day': n_past,n_future = 60,30
 st = 'CPY012'
 # #Full
-# split_date = '2016-01-18'
-# target,start_p,stop_p,host_path=station_sel(st,mode)
+split_date = '2016-11-21'
+target,start_p,stop_p,host_path=station_sel(st,mode)
+n_pca = 7
+n_features = 16
 # *********************2 Yr trail**********************
-split_date = '2015-06-11'
-stop_p = '2016/02/01'
-n_pca = 6
-n_features = 15
-target,start_p,_,host_path=station_sel(st,mode)
+# split_date = '2015-06-11'
+# stop_p = '2016/02/01'
+# n_pca = 6
+# n_features = 15
+# # ******************* 2 Yr with flood *****************
+# start_p = '2016-01-01'
+# split_date = '2017-05-10'
+# stop_p = '2018-01-01'
+# n_pca = 7
+# n_features = 15
+
+
+target,start_p,stop_p,host_path=station_sel(st,mode)
 #################################
 my_optimizer = SGD(lr=0.01, decay=0, momentum=0.9, nesterov=True)
 # my_optimizer = 'adam'
@@ -558,45 +558,75 @@ callback_early_stopping = EarlyStopping(monitor='val_loss',patience=3, verbose=2
 reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-5 * 0.90 ** x)
 callbacks = [callback_early_stopping,reduce_lr]
 verbose, epochs = 1, 100
-save_path =host_path+'/Hybrid'
+save_path =host_path+'/Baseline_T{}'.format(n_past)
 ####################################################
 # save_path =host_path+'/Baseline_{}-{}'.format(n_past,n_future)
 
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 #####################################################
-flag_pca=True
+# flag_pca=True
 
+# if flag_pca: 
+#     n_features = n_pca
+#     minmax=True
+# else:
+#     minmax=True
+# # exp1
+# # run_yolo('cnn',32,minmax=True,cAcD=False,flag_pca=flag_pca)
+# # run_yolo('cnn',64,minmax=True,cAcD=False,flag_pca=flag_pca)
+# # run_yolo('cnn',128,minmax=True,cAcD=False,flag_pca=flag_pca)
+# run_yolo('cnn',32,minmax=False,cAcD=False,flag_pca=flag_pca)
+# run_yolo('cnn',64,minmax=False,cAcD=False,flag_pca=flag_pca)
+# run_yolo('ann',128,minmax=False,cAcD=False,flag_pca=flag_pca)
+# run_yolo('ann',64,minmax=False,cAcD=False,flag_pca=flag_pca)
+# run_yolo('auto',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+# run_yolo('lstm',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+
+# # run_yolo('cnn',128,minmax=False,cAcD=False,flag_pca=flag_pca)
+
+
+
+# flag_pca=False
+# n_features = 16
+# if flag_pca: 
+#     n_features = n_pca
+#     minmax=False
+# else:
+#     minmax=True
+# #exp1
+# run_yolo('cnn',32,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+# run_yolo('cnn',64,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+# run_yolo('ann',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+# run_yolo('ann',64,minmax=minmax,cAcD=False,flag_pca=flag_pca)
+# # run_yolo('cnn',128,minmax=True,cAcD=False,flag_pca=flag_pca)
+
+save_path =host_path+'Hybrid_T{}'.format(n_past)
+if not os.path.exists(save_path):
+    os.makedirs(save_path)
+flag_pca=True
 if flag_pca: 
     n_features = n_pca
-    minmax=False
+    minmax=True
 else:
     minmax=True
 run_yolo('cnnauto',128,minmax=minmax,flag_pca=flag_pca)
-run_yolo('annann',128,minmax=minmax,flag_pca=flag_pca)
 run_yolo('cnnlstm',128,minmax=minmax,flag_pca=flag_pca)
+run_yolo('cAcDauto',128,minmax=minmax,flag_pca=flag_pca)
 
-run_yolo('cnnauto',128,minmax=True,flag_pca=flag_pca)
-run_yolo('annann',128,minmax=True,flag_pca=flag_pca)
-run_yolo('cnnlstm',128,minmax=True,flag_pca=flag_pca)
+
 
 
 flag_pca=False
-n_features = 15
+n_features = 16
 if flag_pca: 
     n_features = n_pca
     minmax=False
 else:
     minmax=True
 run_yolo('cnnauto',128,minmax=minmax,flag_pca=flag_pca)
-run_yolo('annann',128,minmax=minmax,flag_pca=flag_pca)
 run_yolo('cnnlstm',128,minmax=minmax,flag_pca=flag_pca)
-
-run_yolo('cnnauto',128,minmax=True,flag_pca=flag_pca)
-run_yolo('annann',128,minmax=True,flag_pca=flag_pca)
-run_yolo('cnnlstm',128,minmax=True,flag_pca=flag_pca)
-
-
+run_yolo('cAcDauto',128,minmax=minmax,flag_pca=flag_pca)
 #################### DONT DELETE #####################
 # ************* BASE LINE CNN/AUTOEN *************
 # run_yolo('cnn',128,minmax=minmax,cAcD=False,flag_pca=flag_pca)

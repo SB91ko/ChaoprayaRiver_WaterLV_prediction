@@ -2,8 +2,9 @@ from sklearn.metrics import mean_squared_error,r2_score
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-split_date = '2015-06-11'
-stop_p = '2016/02/01'
+
+split_date = '2017-05-10'
+
 
 def real_eva_error(Y,Y_hat):
     try: 
@@ -89,17 +90,18 @@ def monsoon_cal(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn)
     m_train = monsoon_scope(trainY)
     m_test = monsoon_scope(testY)
     # plot_moonson(mode,save_path,trainY,testY,trainPredict,testPredict,syn)
-    plot_moonson_l(mode,save_path,trainY,testY,trainPredict,testPredict,syn)
+    # plot_moonson_l(mode,save_path,trainY,testY,trainPredict,testPredict,syn)
     # plot_rsquare(mode,save_path,m_test,m_testPredict,syn+'monsoon')
     mse, nse,r2 = real_eva_error(m_train, m_trainPredict,)
     Tmse, Tnse,Tr2 = real_eva_error(m_test, m_testPredict,)
     ###### CSV output######
     idx=['Modelname','mse','nse','r2','Test_mse','Test_nse','Test_r2']
-    _df = pd.DataFrame(["{}".format(syn),mse, nse,r2,Tmse, Tnse,Tr2],index=idx,columns=[syn+'monsoon'])
-    try: error = pd.read_csv(save_path+'/eval_monsoon.csv',index_col=0);error=error.T;print('LOAD SUCEESS')
-    except: error = pd.DataFrame();print("cannot find rec")
-    error = pd.concat([error,_df],axis=1)
-    error.T.to_csv(save_path+'/eval_monsoon.csv')
+    _df = pd.DataFrame(["{}".format(syn),mse, nse,r2,Tmse, Tnse,Tr2],index=idx)
+    return _df
+    # try: error = pd.read_csv(save_path+'/eval_monsoon.csv',index_col=0);error=error.T;print('LOAD SUCEESS')
+    # except: error = pd.DataFrame();print("cannot find rec")
+    # error = pd.concat([error,_df],axis=1)
+    # error.T.to_csv(save_path+'/eval_monsoon.csv')
 
 ##################################
 def plotgraph(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn):
@@ -131,12 +133,8 @@ def list_eva_error(Y,Y_hat,n_out):
         nse_l.append(nse)
         r2_l.append(r2)
     return mse_l,nse_l,r2_l
-def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future=1,scaler_t=None):
-    if scaler_t !=None:
-        trainY = scaler_t.inverse_transform(trainY)
-        trainPredict = scaler_t.inverse_transform(trainPredict.reshape(trainY.shape))
-        testY = scaler_t.inverse_transform(testY)
-        testPredict = scaler_t.inverse_transform(testPredict.reshape(testY.shape))
+def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future=1):
+
     # mse_l, nse_l,r2_l = list_eva_error(trainY, trainPredict,n_future)
     # Tmse_l, Tnse_l,Tr2_l = list_eva_error(testY, testPredict,n_future)
     for d in range(n_future):
@@ -153,8 +151,8 @@ def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,
         ########### Plot trian-test ##################
         syn_new = syn+'_b'+str(batch_size)+'_t'+str(d+1)
 
-        plotgraph(mode,target,save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new)
-        monsoon_cal(mode,target,save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new)
+        if d in [0,11,23,47,71]: plotgraph(mode,target,save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new) 
+        mon_df = monsoon_cal(mode,target,save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new) 
         plot_rsquare(mode,save_path,Y_t,Yhat_t,syn_new)
 
         try: error = pd.read_csv(save_path+'/eval.csv',index_col=0);error=error.T;print('{} LOAD SUCEESS'.format(d+1))
@@ -163,6 +161,7 @@ def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,
         dict_data = {'Model':syn,'timestep':d+1,'Feature':n_features,'Time_in':n_past,'Time_out':n_future,'Batch':batch_size,
                     'MSE_trian':mse,'NSE_train':nse,'R2_train':r2,'MSE_test':Tmse,'NSE_test':Tnse,'R2_test':Tr2}
         _df = pd.DataFrame.from_dict(data=dict_data, orient ='index')
+        _df = pd.concat([_df,mon_df])
         error = pd.concat([error,_df],axis=1)
         error.T.to_csv(save_path+'/eval.csv')
     return testY,testPredict
@@ -175,7 +174,7 @@ def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,us
     except:  pass
     ##################################
     plotgraph(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn)
-    monsoon_cal(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn)
+    mon_df = monsoon_cal(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn)
     ########### R-square ################
     plot_rsquare(mode,save_path,testY,testPredict,syn)
     ###### CSV output######
@@ -185,6 +184,7 @@ def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,us
 
     try: error = pd.read_csv(save_path+'/eval.csv',index_col=0);error=error.T;print('LOAD eva SUCEESS')
     except: error = pd.DataFrame();print("cannot find rec")
+    _df = pd.concat([_df,mon_df])
     error = pd.concat([error,_df],axis=1)
     error.T.to_csv(save_path+'/eval.csv')
 
