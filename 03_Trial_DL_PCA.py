@@ -32,6 +32,7 @@ if mode =='hour': n_past,n_future = 24*7,72
 elif mode =='day': n_past,n_future = 60,30
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
+split_date = '2016-10-29'
 #**************** DL PARAMETER **********************#
 callback_early_stopping = EarlyStopping(monitor='val_loss',patience=5, verbose=2)
 reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-5 * 0.90 ** x)
@@ -39,11 +40,15 @@ callbacks = [callback_early_stopping,reduce_lr]
 my_optimizer = SGD(lr=0.01, decay=0, momentum=0.9, nesterov=True)
 
 #---------------------- 2 Yr Edit -------------------------#
-host_path = './CPY012/2Yr_flood/'
-start_p = '2016-01-01'
-split_date = '2017-05-10'
-stop_p = '2018-01-01'
+# host_path = './CPY012/2Yr_flood/'
+# start_p = '2016-01-01'
+# split_date = '2017-05-10'
+# stop_p = '2018-01-01'
 n_pca = 7
+
+syn=''
+Yscale = True
+# allscale = True
 #-----------------------Baseline / Hybrid -----------------------------------#
 save_path =host_path+'Baseline_PCA'
 import os
@@ -138,12 +143,12 @@ def run_code(model,batch_size,syn):
     
     trainPredict = model.predict(X_train)
     testPredict = model.predict(X_test)
-    #---------- Inverse ------------------#
-    y_train = scaler_tar.inverse_transform(y_train)
-    trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train.shape))
-    y_test = scaler_tar.inverse_transform(y_test)
-    testPredict = scaler_tar.inverse_transform(testPredict.reshape(y_test.shape))
-
+    # ---------- Inverse ------------------#
+    if Yscale:
+        y_train = scaler_tar.inverse_transform(y_train)
+        trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train.shape))
+        y_test = scaler_tar.inverse_transform(y_test)
+        testPredict = scaler_tar.inverse_transform(testPredict.reshape(y_test.shape))
     record_list_result(syn,df,mode,y_train,y_test,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
 
 
@@ -161,7 +166,8 @@ n_features = len(data_mar.columns)
 
 ##----------- SCALE--------------##
 def Preprocess_pca(input):
-    
+    global syn
+    syn = syn+'[Xpca_scminmax]'
     pipe = Pipeline([('scaler', StandardScaler()), ('pca',PCA(n_components =n_pca)),('minmax',MinMaxScaler())])
     scaler = pipe.fit(input)
     sc_input = pipe.transform(input)
@@ -171,9 +177,16 @@ def Preprocess_pca(input):
 # X data
 _,sc_data = Preprocess_pca(data_mar)
 # Y data
-scaler_tar = MinMaxScaler()
-scaler_tar.fit(data_mar[target].to_numpy().reshape(-1,1))
-data_mar[target] = scaler_tar.transform(data_mar[target].to_numpy().reshape(-1,1))
+if Yscale:
+    syn = syn+'[y_sc]'        
+    scaler_tar = MinMaxScaler()
+    scaler_tar.fit(data_mar[target].to_numpy().reshape(-1,1))
+    print(data_mar[target].to_numpy().reshape(-1,1).shape)
+# if allscale:
+#     syn = syn+'[X_sc]'  
+#     scaler = MinMaxScaler()
+#     data_mar[data_mar.columns] = scaler.fit_transform(data_mar[data_mar.columns])
+#     print(data_mar.columns)
 
 ##----------- train test split -----------------##
 sc_train,sc_test = sc_data[:split_date],sc_data[split_date:]
@@ -187,7 +200,7 @@ X_train, _ = split_xy(sc_train,n_past,n_future)
 X_test, _ = split_xy(sc_test,n_past,n_future)
 
 ##----------- Run Experiment -----------------##
-for batch_size in [32,64,128,256]:
-    run_code(build_cnn1d(),batch_size,'CNN1D_pca-minmax-MAR{}_b{}_Tin{}'.format(cutoff,batch_size,n_past))
-    run_code(build_lstm(),batch_size,'CuDNNLSTM_pca-minmax-MAR{}_b{}_Tin{}'.format(cutoff,batch_size,n_past))
-    run_code(build_ende_lstm(),batch_size,'AutoCuDNNLSTM_pca-minmax-MAR{}_b{}_Tin{}'.format(cutoff,batch_size,n_past))
+for batch_size in [16,32]:
+    run_code(build_cnn1d(),batch_size,'CNN1D-MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    run_code(build_lstm(),batch_size,'CuDNNLSTM-MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    # run_code(build_ende_lstm(),batch_size,'AutoCuDNNLSTM_pca-minmax-MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))

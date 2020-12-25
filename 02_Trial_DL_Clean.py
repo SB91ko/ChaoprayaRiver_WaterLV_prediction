@@ -4,7 +4,6 @@ from DLtools.feature_sel import call_mar
 
 import numpy as np
 import matplotlib.pyplot as plt
-
 from sklearn.preprocessing import MinMaxScaler
 
 import tensorflow as tf
@@ -13,7 +12,7 @@ from tensorflow.keras import layers
 from tensorflow.keras.callbacks import EarlyStopping
 
 np.random.seed(42)
-############# Keras ###################
+#----------------- Keras-----------------##
 config = tf.compat.v1.ConfigProto()
 config.gpu_options.allow_growth = True
 config.log_device_placement = True
@@ -39,27 +38,33 @@ def split_series(series, n_past, n_future):
         X.append(past)
         y.append(future)
     return np.array(X), np.array(y)
-###### SETTING AREA ################
+#----------------- SETTING AREA -----------------##
 loading = instant_data()
 df,mode = loading.hourly_instant(),'hour'
 # df,mode = loading.daily_instant(),'day'
 if mode =='hour': n_past,n_future = 24*7,72
 elif mode =='day': n_past,n_future = 60,30
-
+################################################
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
+# split_date = '2016-10-29'
 ##################################################
 host_path = './CPY012/2Yr_flood/'
 start_p = '2016-01-01'
 split_date = '2017-05-10'
 stop_p = '2018-01-01'
 n_pca = 7
-####################################################
+#------------- SETTING -------------------------------------#
+DLtype = 'Original_DL'
+syn = ''
+Yscale = False
+allscale = True
+#-----------------###
 save_path =host_path+'Baseline_ori'
 import os
 if not os.path.exists(save_path):
     os.makedirs(save_path)
-#######################################################
+##------------------------------------------------##
 #Split XY
 def split_xy(data,n_past,n_future):
     x,y = split_series(data.values,n_past,n_future)
@@ -111,9 +116,23 @@ def build_cnn1d():
     model.compile(optimizer='adam', loss='mse')    
     model.summary()
     return model
-    
+def build_ann():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    x = layers.Flatten()(input)
+    x = layers.Dense(1000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(500, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(200, activation='relu')(x)
+    x = layers.Dense(n_future)(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(optimizer='adam', loss='mse')    
+    model.summary()
+    return model
+
 def run_code(model,batch_size,syn):
-    global target,mode,df
+    global target,mode,df,y_train,y_test,X_train,X_test
     verbose, epochs = 1, 100
     history = model.fit(X_train,y_train,epochs=epochs,validation_data=(X_test,y_test),batch_size=batch_size,verbose=verbose,callbacks=callbacks)
     def history_plot(history_model,name):   
@@ -128,17 +147,25 @@ def run_code(model,batch_size,syn):
         plt.close(fig)
     history_plot(history,syn)    
     #################################################
+    
     trainPredict = model.predict(X_train)
     testPredict = model.predict(X_test)
     trainPredict = trainPredict.reshape(y_train.shape)
     testPredict = testPredict.reshape(y_test.shape)
 
-    scale_y_test,scale_testPredict = record_list_result(syn,df,mode,y_train,y_test,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
+    # ---------- Inverse ------------------#
+    if Yscale:
+        y_train = scaler_tar.inverse_transform(y_train)
+        trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train.shape))
+        y_test = scaler_tar.inverse_transform(y_test)
+        testPredict = scaler_tar.inverse_transform(testPredict.reshape(y_test.shape))
+    #--------------------------------------#
+    record_list_result(syn,df,DLtype,y_train,y_test,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
 
 callback_early_stopping = EarlyStopping(monitor='val_loss',patience=10, verbose=2)
 reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-5 * 0.90 ** x)
 callbacks = [callback_early_stopping,reduce_lr]
-######################################################
+##----------------- Main -----------------------------#
 
 df = df[start_p:stop_p]
 data = df
@@ -151,12 +178,17 @@ data_mar = call_mar(data,target,mode,cutoff=cutoff)
 data_mar = move_column_inplace(data_mar,target,0)
 n_features = len(data_mar.columns)
 # SCALE
-scaler_tar = MinMaxScaler()
-scaler_tar.fit(data_mar[target].to_numpy().reshape(-1,1))
-print(data_mar[target].to_numpy().reshape(-1,1).shape)
-scaler = MinMaxScaler()
-data_mar[data_mar.columns] = scaler.fit_transform(data_mar[data_mar.columns])
-print(data_mar.columns)
+if Yscale:
+    syn = syn+'[y_sc]'        
+    scaler_tar = MinMaxScaler()
+    scaler_tar.fit(data_mar[target].to_numpy().reshape(-1,1))
+    print(data_mar[target].to_numpy().reshape(-1,1).shape)
+
+if allscale:
+    syn = syn+'[X_sc]'  
+    scaler = MinMaxScaler()
+    data_mar[data_mar.columns] = scaler.fit_transform(data_mar[data_mar.columns])
+    print(data_mar.columns)
 
 
 ## train test split ##
@@ -165,71 +197,8 @@ train,test = data_mar[:split_date],data_mar[split_date:]
 X_train, y_train = split_xy(train,n_past,n_future)
 X_test, y_test = split_xy(test,n_past,n_future)
 
-for batch_size in [32,64]:
-    # run_code(build_cnn1d(),batch_size,'CNN1D_v2_MAR{}_b{}_Tin{}'.format(cutoff,batch_size,n_past))
-    run_code(build_lstm(),batch_size,'CuDNNLSTM_MAR{}_b{}_Tin{}'.format(cutoff,batch_size,n_past))
-    # run_code(build_ende_lstm(),batch_size,'AutoLSTM_MAR{}_b{}_Tin{}'.format(cutoff,batch_size,n_past))
-
-        
-
-# # # # ###### SETTING ################
-# # # # #### MAR selection ##
-# # # # data = call_mar(data,target,mode,cutoff=0.3)
-# # # # #### Corr selection##
-# # # # data = hi_corr_select(data,target)
-# # # # n_features = len(data.columns)
-# # # # # Move Y to first row
-# # # # data = move_column_inplace(data,target,0)
-# # # # # SCALE
-# # # # scaler_tar = MinMaxScaler()
-# # # # scaler_tar.fit(data[target].to_numpy().reshape(-1,1))
-# # # # scaler = MinMaxScaler()
-# # # # data[data.columns] = scaler.fit_transform(data[data.columns])
-# # # # # Train-Test split
-# # # # # split_pt = int(data.shape[0]*.7)
-# # # # # train,test = data.iloc[:split_pt,:],data.iloc[split_pt:,:]
-# # # # split_date = '2017-01-01'
-# # # # train,test = data[:split_date],data[split_date:]
-
-# # # # #Split XY
-# # # # X_train, y_train = split_xy(train,n_past,n_future)
-# # # # X_test, y_test = split_xy(test,n_past,n_future)
-# # # # #######################################
-# # # # batch_size_list = [32,128,256,512]
-# # # # for batch_size in batch_size_list:
-# # # #     try:run_code(build_cnn1d(),batch_size,'CNN_1D_MAR_CORR_{}'.format(batch_size))
-# # # #     except:pass
-# # # #     try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_MAR_CORR_{}'.format(batch_size))
-# # # #     except:pass
-# # # #     try:run_code(build_lstm(),batch_size,'LSTM_MAR_CORR_{}'.format(batch_size))
-# # # #     except:pass
-# ############# ALL FEATURE ##########################
-# ###### SETTING ################
-# n_features = len(data.columns)
-
-# # Move Y to first row
-# data = move_column_inplace(data,target,0)
-# # SCALE
-# scaler_tar = MinMaxScaler()
-# scaler_tar.fit(data[target].to_numpy().reshape(-1,1))
-# scaler = MinMaxScaler()
-# data[data.columns] = scaler.fit_transform(data[data.columns])
-
-# # Train-Test split
-# # split_pt = int(data.shape[0]*.7)
-# # train,test = data.iloc[:split_pt,:],data.iloc[split_pt:,:]
-# split_date = '2017-01-01'
-# train,test = data[:split_date],data[split_date:]
-
-# #Split XY
-# X_train, y_train = split_xy(train,n_past,n_future)
-# X_test, y_test = split_xy(test,n_past,n_future)
-# #######################################
-# batch_size_list = [64,128,256]
-# for batch_size in batch_size_list:
-#     try:run_code(build_cnn1d(),batch_size,'CNN_1D_{}'.format(batch_size))
-#     except KeyboardInterrupt: pass
-#     try:run_code(build_ende_lstm(),batch_size,'En_Dec_LSTM_{}'.format(batch_size))
-#     except KeyboardInterrupt: pass
-#     try:run_code(build_lstm(),batch_size,'LSTM_{}'.format(batch_size))
-#     except KeyboardInterrupt: pass
+for batch_size in [16,32]:
+    run_code(build_cnn1d(),batch_size,'CNN1D_v2_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    run_code(build_lstm(),batch_size,'CuDNNLSTM_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    run_code(build_ann(),batch_size,'ANN_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    # run_code(build_ende_lstm(),batch_size,'AutoLSTM_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))

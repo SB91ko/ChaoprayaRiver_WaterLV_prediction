@@ -1,4 +1,6 @@
 from sklearn.metrics import mean_squared_error,r2_score
+from sklearn.metrics import mean_absolute_error
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,15 +9,17 @@ split_date = '2017-05-10'
 
 
 def real_eva_error(Y,Y_hat):
-    try: 
-        mse = np.mean((Y_hat - Y)**2)    #MSE
-        nse = nashsutcliffe(Y,Y_hat)
-        r2 = rsquared(Y,Y_hat)
-    except ValueError: mse,nse,r2 = np.NaN,np.NaN,np.NaN
-    
-    return mse,nse,r2
-def plot_rsquare(mode,save_path,testY,testPredict,syn):
-    _, _,Tr2 = real_eva_error(testY, testPredict,)
+    mse = np.mean((Y_hat - Y)**2)    #MSE
+    nse = nashsutcliffe(Y,Y_hat)
+    r2 = rsquared(Y,Y_hat)
+    #---------added ------------#
+    rmse = mse**.5  # RMSE
+    mae = mean_absolute_error(Y,Y_hat)
+
+    #except ValueError: mse,nse,r2,rmse,mae = np.NaN,np.NaN,np.NaN,np.NaN,np.NaN
+    return mse,nse,r2,rmse,mae
+def plot_rsquare(save_path,testY,testPredict,syn):
+    _, _,Tr2,_,_ = real_eva_error(testY, testPredict,)
     m_test = monsoon_scope(testY)
     m_testPredict = monsoon_scope(testPredict)
 
@@ -27,7 +31,7 @@ def plot_rsquare(mode,save_path,testY,testPredict,syn):
     ax.set_ylabel('Predicted')
     ax.set_title(syn+'\nR2: %.3f' % (Tr2))
     ax.legend(loc='upper left')
-    fig.savefig(save_path+'/r2_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
+    fig.savefig(save_path+'/r2_{}.png'.format(syn), dpi=300, bbox_inches='tight') 
     fig.clear()
     plt.close(fig)
 
@@ -38,75 +42,72 @@ def monsoon_scope(df):
     # return df.dropna()
     return df.iloc[(df.index.month.isin(monsoon))]
 
-def plot_moonson_l(mode,save_path,trainY,testY,trainPredict,testPredict,syn):
-    mse, nse,r2 = real_eva_error(monsoon_scope(trainY), monsoon_scope(trainPredict),)
-    Tmse, Tnse,Tr2 = real_eva_error(monsoon_scope(testY), monsoon_scope(testPredict),)
+def plot_moonson_l(save_path,trainY,testY,trainPredict,testPredict,syn):
+    mse,nse,r2,rmse,mae = real_eva_error(monsoon_scope(trainY), monsoon_scope(trainPredict),)
+    Tmse,Tnse,Tr2,Trmse,Tmae = real_eva_error(monsoon_scope(testY), monsoon_scope(testPredict),)
 
-    fig,ax =  plt.subplots(2,2,figsize=(15,7))
+    fig,ax =  plt.subplots(2,1,figsize=(6.4, 4.8))
     monsoon = [8,9,10]
     fig.autofmt_xdate(rotation=45)
-    fig.suptitle('\nMonsoon season:'+syn+'\nTrain MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (mse,nse,r2)+'\nTest  MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (Tmse,Tnse,Tr2))
+    fig.suptitle('\nMonsoon season:'+syn+'\nTrain MSE: %.3f | NSE: %.3f | MAE score: %.3f' % (mse,nse,mae)+'\nTest  MSE: %.3f | NSE: %.3f | MAE score: %.3f' % (Tmse,Tnse,Tmae))
     sel_m = trainY.iloc[(trainY.index.month.isin(monsoon))]
     Tsel_m = trainPredict.iloc[(trainPredict.index.month.isin(monsoon))]
 
-    sel_2014 = sel_m.iloc[(sel_m.index.year.isin([2014]))]
-    Tsel_2014 = Tsel_m.iloc[(Tsel_m.index.year.isin([2014]))]
-    ax[0][0].plot(sel_2014,label='Y_2014')
-    ax[0][0].plot(Tsel_2014,label='Yhat_2014')
-    ax[0][0].set_title(' Year 2014')
-    ax[0][0].legend()
+    # sel_2014 = sel_m.iloc[(sel_m.index.year.isin([2014]))]
+    # Tsel_2014 = Tsel_m.iloc[(Tsel_m.index.year.isin([2014]))]
+    # ax[0][0].plot(sel_2014,label='Y_2014')
+    # ax[0][0].plot(Tsel_2014,label='Yhat_2014')
+    # ax[0][0].set_title(' Year 2014')
+    # ax[0][0].legend()
 
-    sel_2015 = sel_m.iloc[(sel_m.index.year.isin([2015]))]
-    Tsel_2015 = Tsel_m.iloc[(Tsel_m.index.year.isin([2015]))]
-    ax[0][1].plot(sel_2015,label='Y_2015')
-    ax[0][1].plot(Tsel_2015,label='Yhat_2015')
-    ax[0][1].set_title('Year 2015')
-    ax[0][1].legend()
+    # sel_2015 = sel_m.iloc[(sel_m.index.year.isin([2015]))]
+    # Tsel_2015 = Tsel_m.iloc[(Tsel_m.index.year.isin([2015]))]
+    # ax[0][1].plot(sel_2015,label='Y_2015')
+    # ax[0][1].plot(Tsel_2015,label='Yhat_2015')
+    # ax[0][1].set_title('Year 2015')
+    # ax[0][1].legend()
     
     sel_2016 = sel_m.iloc[(sel_m.index.year.isin([2016]))]
     Tsel_2016 = Tsel_m.iloc[(Tsel_m.index.year.isin([2016]))]
-    ax[1][0].plot(sel_2016,label='Y_2016')
-    ax[1][0].plot(Tsel_2016,label='Yhat_2016')
-    ax[1][0].set_title(' Year 2016')
-    ax[1][0].legend()
+    ax[0].plot(sel_2016,label='Y_2016')
+    ax[0].plot(Tsel_2016,label='Yhat_2016')
+    ax[0].set_title(' Year 2016')
+    ax[0].legend(loc='upper left')
 
     sel_m = testY.iloc[(testY.index.month.isin(monsoon))]
     Tsel_m = testPredict.iloc[(testPredict.index.month.isin(monsoon))]
     sel_2017 = sel_m.iloc[(sel_m.index.year.isin([2017]))]
     Tsel_2017 = Tsel_m.iloc[(Tsel_m.index.year.isin([2017]))]
-    ax[1][1].plot(sel_2017,label='Y_2017',color='orange')
-    ax[1][1].plot(Tsel_2017,label='Yhat_2017',color='red')
-    ax[1][1].set_title('Year 2017')
-    ax[1][1].legend()
+    ax[1].plot(sel_2017,label='Y_2017',color='orange')
+    ax[1].plot(Tsel_2017,label='Yhat_2017',color='red')
+    ax[1].set_title('Year 2017')
+    ax[1].legend(loc='upper left')
 
     plt.tight_layout()
-    fig.savefig(save_path+'/monsoon_line_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
+    fig.savefig(save_path+'/monsoon_line_{}.png'.format(syn), dpi=200, bbox_inches='tight') 
     fig.clear()
     plt.close(fig)
     
-def monsoon_cal(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn):        
+def monsoon_cal(trainY,testY,trainPredict,testPredict,syn):        
     m_trainPredict = monsoon_scope(trainPredict)
     m_testPredict = monsoon_scope(testPredict)
     m_train = monsoon_scope(trainY)
     m_test = monsoon_scope(testY)
-    # plot_moonson(mode,save_path,trainY,testY,trainPredict,testPredict,syn)
+    
     # plot_moonson_l(mode,save_path,trainY,testY,trainPredict,testPredict,syn)
     # plot_rsquare(mode,save_path,m_test,m_testPredict,syn+'monsoon')
-    mse, nse,r2 = real_eva_error(m_train, m_trainPredict,)
-    Tmse, Tnse,Tr2 = real_eva_error(m_test, m_testPredict,)
+    mse,nse,r2,rmse,mae = real_eva_error(m_train, m_trainPredict,)
+    Tmse,Tnse,Tr2,Trmse,Tmae = real_eva_error(m_test, m_testPredict,)
     ###### CSV output######
-    idx=['Modelname','mse','nse','r2','Test_mse','Test_nse','Test_r2']
-    _df = pd.DataFrame(["{}".format(syn),mse, nse,r2,Tmse, Tnse,Tr2],index=idx)
+    dict_data = {'Model_':syn,'MSE_trian*':mse,'Rmse_trian*':rmse,'NSE_train*':nse,'R2_train*':r2,'MAE_train*':mae,
+    'MSE_test*':Tmse,'Rmse_test*':Trmse,'NSE_test*':Tnse,'R2_test*':Tr2,'MAE_test':Tmae}   
+    _df = pd.DataFrame.from_dict(data=dict_data, orient ='index')
     return _df
-    # try: error = pd.read_csv(save_path+'/eval_monsoon.csv',index_col=0);error=error.T;print('LOAD SUCEESS')
-    # except: error = pd.DataFrame();print("cannot find rec")
-    # error = pd.concat([error,_df],axis=1)
-    # error.T.to_csv(save_path+'/eval_monsoon.csv')
 
 ##################################
-def plotgraph(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn):
-    mse, nse,r2 = real_eva_error(trainY, trainPredict,)
-    Tmse, Tnse,Tr2 = real_eva_error(testY, testPredict,)
+def plotgraph(target,save_path,trainY,testY,trainPredict,testPredict,syn):
+    mse,nse,r2,rmse,mae = real_eva_error(trainY, trainPredict,)
+    Tmse,Tnse,Tr2,Trmse,mae = real_eva_error(testY, testPredict,)
 
     fig,ax = plt.subplots(1,figsize=(15,5))
     # plt.plot(trainPredict.index,trainPredict, label = "Predict_train",color='g')
@@ -115,9 +116,9 @@ def plotgraph(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn):
     ax.scatter(x=trainY.index,y=trainY,marker='.',label='Actual_train',alpha=0.3,edgecolor='b',facecolor='None')
     ax.scatter(x=testY.index,y=testY,marker='.',label='Actual_test',alpha=0.3,edgecolor='orange',facecolor='None')
 
-    ax.set_title('[{}] {}\n'.format(syn,mode)+'Water Level {} Forecast vs Actuals\n'.format(target)+'Train MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (mse,nse,r2)+'\nTest  MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (Tmse,Tnse,Tr2))
+    ax.set_title('[{}]\n'.format(syn)+'Water Level {} Forecast vs Actuals\n'.format(target)+'Train MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (mse,nse,r2)+'\nTest  MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (Tmse,Tnse,Tr2))
     ax.legend(loc='upper left', fontsize=8)
-    fig.savefig(save_path+'/Plot_{}_{}.png'.format(syn,mode), dpi=300, bbox_inches='tight') 
+    fig.savefig(save_path+'/Plot_{}.png'.format(syn), dpi=300, bbox_inches='tight') 
     fig.clf()
     fig.clear()
     plt.close(fig)
@@ -125,79 +126,119 @@ def plotgraph(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn):
 
 def list_eva_error(Y,Y_hat,n_out):
     mse_l,nse_l,r2_l = list(),list(),list()
+    rmse_l,mae_l = list(),list()
     if n_out==1: real_eva_error(Y,Y_hat)
     for i in range(n_out):
-        try: mse,nse,r2=real_eva_error(Y[:,i],Y_hat[:,i])
-        except: mse,nse,r2=real_eva_error(Y[:,i].reshape(-1,1),Y_hat[:,i])
+        try: mse,nse,r2,rmse,mae=real_eva_error(Y[:,i],Y_hat[:,i])
+        except: mse,nse,r2,rmse,mae=real_eva_error(Y[:,i].reshape(-1,1),Y_hat[:,i])
         mse_l.append(mse)
         nse_l.append(nse)
         r2_l.append(r2)
-    return mse_l,nse_l,r2_l
-def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future=1):
+        rmse_l.append(rmse)
+        mae_l.append(mae)
 
+    return mse_l,nse_l,r2_l,rmse_l,mae_l
+def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future=1):
     # mse_l, nse_l,r2_l = list_eva_error(trainY, trainPredict,n_future)
     # Tmse_l, Tnse_l,Tr2_l = list_eva_error(testY, testPredict,n_future)
+    idx=None
+    try:
+        error = pd.read_csv(save_path+'/eval.csv',index_col=False)
+        error = error.T
+        error.reset_index(drop=True, inplace=True)
+    except:
+        error = pd.DataFrame()
+        print('-- created new file --')
+
     for d in range(n_future):
         st_idx = n_past+d
         
-        # split_date = '2014-10-01'
         Y_tr= pd.Series(data=trainY[:,d],index=df[:split_date].index[st_idx:len(trainY)+st_idx])
         Yhat_tr = pd.Series(data=(trainPredict[:,d].ravel()),index=df[:split_date].index[st_idx:len(trainY)+st_idx])        
         Y_t= pd.Series(data=testY[:,d],index=df[split_date:].index[st_idx:len(testY)+st_idx])
         Yhat_t = pd.Series(data=(testPredict[:,d].ravel()),index=df[split_date:].index[st_idx:len(testY)+st_idx])
 
-        mse, nse,r2 = real_eva_error(Y_tr, Yhat_tr,)
-        Tmse, Tnse,Tr2 = real_eva_error(Y_t, Yhat_t,)
-        ########### Plot trian-test ##################
-        syn_new = syn+'_b'+str(batch_size)+'_t'+str(d+1)
+        mse,nse,r2,rmse,mae = real_eva_error(Y_tr, Yhat_tr,)
+        Tmse, Tnse,Tr2,Trmse,Tmae = real_eva_error(Y_t, Yhat_t,)
+        #------------ Plot trian-test ------------------#
+        syn_new = syn+'_t'+str(d+1)
+        if d in [0,11,23,47,71]: 
+            plotgraph(target,save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new) 
+            plot_moonson_l(save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn)
 
-        if d in [0,11,23,47,71]: plotgraph(mode,target,save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new) 
-        mon_df = monsoon_cal(mode,target,save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new) 
-        plot_rsquare(mode,save_path,Y_t,Yhat_t,syn_new)
-
-        try: error = pd.read_csv(save_path+'/eval.csv',index_col=0);error=error.T;print('{} LOAD SUCEESS'.format(d+1))
-        except: error = pd.DataFrame();print("cannot find rec")
-
-        dict_data = {'Model':syn,'timestep':d+1,'Feature':n_features,'Time_in':n_past,'Time_out':n_future,'Batch':batch_size,
-                    'MSE_trian':mse,'NSE_train':nse,'R2_train':r2,'MSE_test':Tmse,'NSE_test':Tnse,'R2_test':Tr2}
+        mon_df = monsoon_cal(Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new) 
+        plot_rsquare(save_path,Y_t,Yhat_t,syn_new)
+        
+        #-----------------------
+        print('{} saved !'.format(d+1))
+        #---------------------
+        dict_data = {'note':mode,'Model':syn,'timestep':d+1,'Feature':n_features,'Time_in':n_past,'Time_out':n_future,'Batch':batch_size,
+                    'MSE_trian':mse,'Rmse_trian':rmse,'NSE_train':nse,'R2_train':r2,'MAE_train':mae,
+                    'MSE_test':Tmse,'Rmse_test':Trmse,'NSE_test':Tnse,'R2_test':Tr2,'MAE_test':Tmae} 
         _df = pd.DataFrame.from_dict(data=dict_data, orient ='index')
         _df = pd.concat([_df,mon_df])
+        
+        idx=_df.index
+        
+        _df.reset_index(drop=True, inplace=True)
+        error.reset_index(drop=True, inplace=True)
         error = pd.concat([error,_df],axis=1)
-        error.T.to_csv(save_path+'/eval.csv')
+        try: 
+            error.set_index(idx,inplace=True)
+        except:
+            idx=idx.insert(0,'0')
+            error.set_index(idx,inplace=True)
+    error.T.to_csv(save_path+'/eval.csv',index=False)
     return testY,testPredict
 def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=False):
-    mse, nse,r2 = real_eva_error(trainY, trainPredict,)
-    Tmse, Tnse,Tr2 = real_eva_error(testY, testPredict,)
+    mse,nse,r2,rmse,mae = real_eva_error(trainY, trainPredict,)
+    Tmse, Tnse,Tr2,Trmse,Tmae = real_eva_error(testY, testPredict,)
     try:
         trainPredict = pd.Series(data=(trainPredict),index=trainY.index)
         testPredict = pd.Series(data=(testPredict),index=testY.index)
     except:  pass
     ##################################
-    plotgraph(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn)
-    mon_df = monsoon_cal(mode,target,save_path,trainY,testY,trainPredict,testPredict,syn)
+    plotgraph(target,save_path,trainY,testY,trainPredict,testPredict,syn)
+    mon_df = monsoon_cal(trainY,testY,trainPredict,testPredict,syn)
     ########### R-square ################
-    plot_rsquare(mode,save_path,testY,testPredict,syn)
+    plot_rsquare(save_path,testY,testPredict,syn)
+    plot_moonson_l(save_path,trainY,testY,trainPredict,testPredict,syn)
     ###### CSV output######
     dict_data = {'Model':syn,'Date':n_past,'Feature':n_features,'Time_in':n_past,'Time_out':n_future,'Use time':use_time,
-                'MSE_trian':mse,'NSE_train':nse,'R2_train':r2,'MSE_test':Tmse,'NSE_test':Tnse,'R2_test':Tr2}
+                'MSE_trian':mse,'Rmse_trian':rmse,'NSE_train':nse,'R2_train':r2,'MAE_train':mae,
+                'MSE_test':Tmse,'Rmse_test':Trmse,'NSE_test':Tnse,'R2_test':Tr2,'MAE_test':Tmae} 
+    
     _df = pd.DataFrame.from_dict(data=dict_data, orient ='index')
-
-    try: error = pd.read_csv(save_path+'/eval.csv',index_col=0);error=error.T;print('LOAD eva SUCEESS')
-    except: error = pd.DataFrame();print("cannot find rec")
     _df = pd.concat([_df,mon_df])
+    
+    try:
+        error = pd.read_csv(save_path+'/eval.csv',index_col=False)
+        error = error.T
+        error.reset_index(drop=True, inplace=True)
+    except:
+        error = pd.DataFrame()
+        print('-- created new file --')
+    
+    idx=_df.index
+    _df.reset_index(drop=True, inplace=True)
+    error.reset_index(drop=True, inplace=True)
     error = pd.concat([error,_df],axis=1)
-    error.T.to_csv(save_path+'/eval.csv')
+    try: 
+        error.set_index(idx,inplace=True)
+    except:
+        idx=idx.insert(0,'0')
+        error.set_index(idx,inplace=True)
+    error.T.to_csv(save_path+'/eval.csv',index=False)
 
     ##########################
-    if rec_result==True: 
-        try: result_csv = pd.read_csv(save_path+'/result.csv',index_col='date');print('LOAD result SUCEESS')
-        except: result_csv = pd.DataFrame();print("cannot find result rec")
+    if rec_result: 
+        
         res_train=pd.DataFrame({'model':syn,'Y':trainY,'Yhat':trainPredict,'type': 'train'})
         res_test=pd.DataFrame({'model':syn,'Y':testY,'Yhat':testPredict,'type': 'test'})
 
         result_ = pd.concat([res_train,res_test],axis=0)
-        result_csv = pd.concat([result_csv,result_],axis=1)
-        result_csv.to_csv(save_path+'/result.csv')
+        
+        result_.to_csv(save_path+'/result{}.csv'.format(syn))
     ######################
     return testY,testPredict
 

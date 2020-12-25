@@ -15,8 +15,8 @@ from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score
 from DLtools.Data import instant_data,intersection,station_sel
-from DLtools.Trial_evaluation_rec import record_alone_result,nashsutcliffe
-from DLtools.feature_sel import call_mar,hi_corr_select
+from DLtools.Trial_evaluation_rec import record_alone_result
+from DLtools.feature_sel import call_mar
 
 def move_column_inplace(df, col, pos):
     col = df.pop(col)
@@ -201,13 +201,14 @@ if __name__ == "__main__":
         # trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
         # print(trainX.shape,trainY.shape,testX.shape,testY.shape)
         ############ LINEAR ##################
-        # syn = 'linear_pca_m{}_t{}'.format(cutoff,str(out_t_step))
-        # trainPredict,testPredict,use_t = linear()
-        # use_time = use_t
-        # n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
-        # n_past='all'
-        # print(cutoff,out_t_step,'  LR time......',use_t)
-        # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
+        syn = 'linear_pca_m{}_t{}'.format(cutoff,str(out_t_step))
+        trainPredict,testPredict,use_t = linear()
+        use_time = use_t
+        n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
+        n_past='all'
+        print(cutoff,out_t_step,'  LR time......',use_t)
+        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        
         ######## VAR ################
         # syn = 'VAR_pca_m{}_t{}'.format(cutoff,str(out_t_step))
         # trainPredict,testPredict,time_,train,test =var(data)
@@ -222,26 +223,27 @@ if __name__ == "__main__":
         n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
         n_past='all'
         print(cutoff,out_t_step,'  SVR time......',use_t)
-        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=True)
         ###### RF ################
-        # syn = 'RF_m{}_t{}'.format(cutoff,str(out_t_step))
-        # trainPredict,testPredict,use_t = rf()
-        # use_time = use_t
-        # n_features = 'Mars{}_'.format(cutoff)
-        # n_past='all'
-        # print(cutoff,out_t_step,'  RF time......',use_t)
-        # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
-        
-        #----------------------- no pca-----------------------#
+        syn = 'RF_m{}_t{}'.format(cutoff,str(out_t_step))
+        trainPredict,testPredict,use_t = rf()
+        use_time = use_t
+        n_features = 'Mars{}_'.format(cutoff)
+        n_past='all'
+        print(cutoff,out_t_step,'  RF time......',use_t)
+        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        ###############################################################
+        #----------------------- no pca--------------------------------#
+        ###############################################################
         DOpca=False
         ############ LINEAR ##################
-        # syn = 'linear_m{}_t{}'.format(cutoff,str(out_t_step))
-        # trainPredict,testPredict,use_t = linear()
-        # use_time = use_t
-        # n_features = 'Mars{}'.format(cutoff)
-        # n_past='all'
-        # print(cutoff,out_t_step,'  LR time......',use_t)
-        # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,)
+        syn = 'linear_m{}_t{}'.format(cutoff,str(out_t_step))
+        trainPredict,testPredict,use_t = linear()
+        use_time = use_t
+        n_features = 'Mars{}'.format(cutoff)
+        n_past='all'
+        print(cutoff,out_t_step,'  LR time......',use_t)
+        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
         ######## VAR ################
         # syn = 'VAR_pca_m{}_t{}'.format(cutoff,str(out_t_step))
         # trainPredict,testPredict,time_,train,test =var(data)
@@ -256,12 +258,12 @@ if __name__ == "__main__":
         n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
         n_past='all'
         print(cutoff,out_t_step,'  SVR time......',use_t)
-        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=True)
         ###### RF ################
-        # syn = 'RF_m{}_t{}'.format(cutoff,str(out_t_step))
-        # trainPredict,testPredict,use_t = rf()
-        # use_time = use_t
-        # n_features = 'Mars{}_'.format(cutoff)
-        # n_past='all'
-        # print(cutoff,out_t_step,'  RF time......',use_t)
-        # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        syn = 'RF_m{}_t{}'.format(cutoff,str(out_t_step))
+        trainPredict,testPredict,use_t = rf()
+        use_time = use_t
+        n_features = 'Mars{}_'.format(cutoff)
+        n_past='all'
+        print(cutoff,out_t_step,'  RF time......',use_t)
+        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
