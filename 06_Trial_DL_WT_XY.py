@@ -15,7 +15,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.optimizers import SGD
-from keras.utils.vis_utils import plot_model
+from tensorflow.keras.utils import plot_model
 import pywt
 np.random.seed(42)
 ############# Keras ###################
@@ -33,7 +33,7 @@ tf.compat.v1.keras.backend.set_session(sess)
 loading = instant_data()
 df,mode = loading.hourly_instant(),'hour'
 # df,mode = loading.daily_instant(),'day'
-if mode =='hour': n_past,n_future = 24*7,72
+if mode =='hour': n_past,n_future = 24*6,72
 elif mode =='day': n_past,n_future = 60,30
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
@@ -44,19 +44,20 @@ reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-5 * 0.90 ** x)
 callbacks = [callback_early_stopping,reduce_lr]
 #my_optimizer = SGD(lr=0.01, decay=0, momentum=0.9, nesterov=True)
 
-#--------------------------- 2 Yr Edit -----------------------------------#
-host_path = './CPY012/2Yr_flood/'
-start_p = '2016-01-01'
-split_date = '2017-05-10'
-stop_p = '2018-01-01'
-n_pca = 7
+#--------------------------- 4 Yr Edit -----------------------------------#
+# host_path = './CPY012/4Yr_flood/'
+# start_p='2014-10-01'
+# stop_p='2017-10-01'
+split_date = '2016-11-01'
+
+n_pca = 4
 
 syn=''
 # Yscale = False # scaler Y before put in model 
 allscale = True # scale X before put in model
 w_std = False # standardize before wavelet transform
 #-----------------------Baseline / Hybrid -----------------------------------#
-save_path =host_path+'06_wtXY_v2_reluCNN'
+save_path =host_path+'06_wtXY'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 #----------------------------------------------------------#
@@ -128,8 +129,7 @@ def inverse_WT(coeffs_list):
     return np.array(wav)
 #---------------------- MODEL ------------------------------------#
 def build_mod_cnn1d():
-    global n_past,n_future,n_features,syn_model
-    syn_model = syn_model+'[cnn]'
+    global n_past,n_future,n_features
     input = keras.Input(shape=(n_past, int(n_features)))
     x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(input)
     x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
@@ -139,19 +139,65 @@ def build_mod_cnn1d():
     x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
     x = layers.MaxPooling1D(pool_size=2)(x)
     x = layers.Flatten()(x)
-    x = layers.Dropout(0.3)(x)
-    x = layers.Dense(2000)(x)
-    x = layers.Dropout(0.3)(x)
-    x = layers.Dense(1000)(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(1000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
     x = layers.Dense(500)(x)
+    x = layers.Dense(200)(x)
     x = layers.Dense(n_future, activation='relu')(x)
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(optimizer='adam', loss='mse')    
     model.summary()
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
     return model
+def build_mod2_cnn1d():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(input)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = layers.Flatten()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.BatchNormalization()(x) # added
+    x = layers.Dense(1000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(500)(x)
+    x = layers.Dense(200)(x)
+    x = layers.Dense(n_future, activation='relu')(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(optimizer='adam', loss='mse')    
+    model.summary()
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
+    return model
+
+def build_orimod_cnn1d():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(input)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    #x = layers.BatchNormalization()(x) # added
+    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = layers.Flatten()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(1000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(500)(x)
+    x = layers.Dense(200)(x)
+    x = layers.Dense(n_future, activation='linear')(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(optimizer='adam', loss='mse')    
+    model.summary()
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
+    return model
+
 def build_lstm():
-    global n_past,n_future,n_features,syn_model
-    syn_model = syn_model+'[lstm]'
+    global n_past,n_future,n_features
     input = keras.Input(shape=(n_past, int(n_features)))
     # x = layers.LSTM(200, activation='relu', input_shape=(n_past, n_features),return_sequences=False)(input)
     x = layers.CuDNNLSTM(200,input_shape=(n_past, n_features),return_sequences=False)(input)
@@ -163,11 +209,10 @@ def build_lstm():
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(loss='mse', optimizer='adam')
     model.summary()
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
     return model
-
 def build_cnn1d():
-    global n_past,n_future,n_features,syn_model
-    syn_model = syn_model+'[1cnn]'
+    global n_past,n_future,n_features
     input = keras.Input(shape=(n_past, int(n_features)))
     x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(input)
     x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
@@ -181,6 +226,38 @@ def build_cnn1d():
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(optimizer='adam', loss='mse')    
     model.summary()
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
+    return model
+def build_ann():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    x = layers.Flatten()(input)
+    x = layers.Dense(2000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(1000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(200, activation='relu')(x)
+    x = layers.Dense(n_future,activation='linear')(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(optimizer='adam', loss='mse')    
+    model.summary()
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
+    return model
+def build_lstm_v2():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    # x = layers.LSTM(200, activation='relu', input_shape=(n_past, n_features),return_sequences=False)(input)
+    x = layers.CuDNNLSTM(300,return_sequences=True)(input)
+    x = layers.CuDNNLSTM(300,return_sequences=False)(x)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(100, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(n_future)(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(loss='mse', optimizer='adam')
+    model.summary()
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
     return model
 #---------------------------#    
 def run_code_editv2(model,X,Y,batch_size):
@@ -198,7 +275,6 @@ def run_code_editv2(model,X,Y,batch_size):
         fig.clear()
         plt.close(fig)
     history_plot(history,syn)    
-    plot_model(model, to_file='model_{}.png'.format(syn_model), show_shapes=True)
 
     trainPredict = model.predict(X[0])
     testPredict = model.predict(X[1])
@@ -263,7 +339,6 @@ if allscale:
     scaler = MinMaxScaler()
     wdata[wdata.columns] = scaler.fit_transform(wdata[wdata.columns])
 
-# TODO #####$$$$ อันนนี้ ตั้งใจแยก X Y แล้วสุ่มRANDOMได ้!!!!! 
 
 ##-------add ------- Select degree 
 def syn_column_select(data,sel_word):
@@ -313,8 +388,23 @@ def wav_dl_wav_run(model_list,batch,syn):
 for batch_size in [16,32]:
     # model = [build_cnn1d(),build_cnn1d(),build_cnn1d(),build_cnn1d()]
     # wav_dl_wav_run(model,batch_size,'wCNN_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    
-    syn_model=''
-    model_B = [build_lstm(),build_mod_cnn1d(),build_mod_cnn1d(),build_mod_cnn1d()]
+    model_A = [build_lstm(),build_orimod_cnn1d(),build_orimod_cnn1d(),build_orimod_cnn1d()]
+    wav_dl_wav_run(model_A,batch_size,'w_best_LSTM_dCNN(linear)x4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
 
-    wav_dl_wav_run(model_B,batch_size,'w_best_LSTM_deepCNNx4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    model_B = [build_lstm(),build_mod_cnn1d(),build_mod_cnn1d(),build_mod_cnn1d()]
+    wav_dl_wav_run(model_B,batch_size,'w_best_LSTM_dCNN(relu)x4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+
+    model_B2 = [build_lstm(),build_mod2_cnn1d(),build_mod2_cnn1d(),build_mod2_cnn1d()]
+    wav_dl_wav_run(model_B2,batch_size,'w_best_LSTM_dCNN(bat)x4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+
+    model_C = [build_lstm(),build_mod_cnn1d(),build_mod_cnn1d(),build_ann()]
+    wav_dl_wav_run(model_C,batch_size,'w_LSTM_dCNNx2_ANN_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+
+    model_D = [build_lstm(),build_lstm(),build_mod_cnn1d(),build_mod_cnn1d()]
+    wav_dl_wav_run(model_D,batch_size,'w_LSTMx2_dCNNx2_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+
+    model_E = [build_lstm(),build_lstm(),build_lstm(),build_lstm()]
+    wav_dl_wav_run(model_E,batch_size,'w_LSTMx4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    
+    model_F = [build_lstm(),build_lstm_v2(),build_lstm_v2(),build_lstm_v2()]
+    wav_dl_wav_run(model_E,batch_size,'w_LSTM_LSTM(big)x3_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))

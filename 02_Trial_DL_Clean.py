@@ -42,18 +42,21 @@ def split_series(series, n_past, n_future):
 loading = instant_data()
 df,mode = loading.hourly_instant(),'hour'
 # df,mode = loading.daily_instant(),'day'
-if mode =='hour': n_past,n_future = 24*7,72
+if mode =='hour': n_past,n_future = 24*5,72
 elif mode =='day': n_past,n_future = 60,30
 ################################################
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
 # split_date = '2016-10-29'
-##################################################
-host_path = './CPY012/2Yr_flood/'
-start_p = '2016-01-01'
-split_date = '2017-05-10'
-stop_p = '2018-01-01'
-n_pca = 7
+#--------------------------- 2 Yr Edit -----------------------------------#
+# host_path = './CPY012/2Yr_flood/'
+# start_p = '2016-01-01'
+# split_date = '2017-05-10'
+# stop_p = '2018-01-01'
+
+#--------------------------- 4 Yr Edit -----------------------------------#
+split_date = '2016-11-01'
+n_pca = 4
 #------------- SETTING -------------------------------------#
 DLtype = 'Original_DL'
 syn = ''

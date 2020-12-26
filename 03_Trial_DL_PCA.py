@@ -15,6 +15,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.utils import plot_model
 np.random.seed(42)
 ############# Keras ###################
 config = tf.compat.v1.ConfigProto()
@@ -28,23 +29,24 @@ tf.compat.v1.keras.backend.set_session(sess)
 loading = instant_data()
 df,mode = loading.hourly_instant(),'hour'
 # df,mode = loading.daily_instant(),'day'
-if mode =='hour': n_past,n_future = 24*7,72
+if mode =='hour': n_past,n_future = 24*6,72
 elif mode =='day': n_past,n_future = 60,30
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
-split_date = '2016-10-29'
+split_date = '2016-11-01'
 #**************** DL PARAMETER **********************#
 callback_early_stopping = EarlyStopping(monitor='val_loss',patience=5, verbose=2)
 reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-5 * 0.90 ** x)
 callbacks = [callback_early_stopping,reduce_lr]
 my_optimizer = SGD(lr=0.01, decay=0, momentum=0.9, nesterov=True)
 
-#---------------------- 2 Yr Edit -------------------------#
+# #---------------------- 2 Yr Edit -------------------------#
 # host_path = './CPY012/2Yr_flood/'
 # start_p = '2016-01-01'
 # split_date = '2017-05-10'
 # stop_p = '2018-01-01'
-n_pca = 7
+#----------------------------------------------------
+n_pca = 4
 
 syn=''
 Yscale = True
@@ -93,6 +95,7 @@ def build_lstm():
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(loss='mse', optimizer=my_optimizer)
     model.summary()
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
     return model
 def build_ende_lstm():
     global n_past,n_future,n_features
@@ -108,7 +111,7 @@ def build_ende_lstm():
     model = keras.Model(inputs=[input], outputs=out)
     model.compile(loss='mse', optimizer=my_optimizer)
     model.summary()
-       
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)   
     return model
 def build_cnn1d():
     global n_past,n_future,n_features
@@ -124,6 +127,7 @@ def build_cnn1d():
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(optimizer='adam', loss='mse')    
     model.summary()
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
     return model
 def run_code(model,batch_size,syn):
     global target,mode,df,X_train,y_train,X_test,y_test

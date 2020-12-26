@@ -275,11 +275,13 @@ def station_sel(st,mode):
         if mode =='hour': host_path = './output/Hourly/'
         elif mode =='day': host_path = '.output/Daily/'
     elif st == 'CPY012':
+        host_path = './CPY012/4Yr_flood/'
+        start_p='2014-10-01'
+        stop_p='2017-10-01'
+        split_date = '2016-11-01'
         target='CPY012_wl'
-        start_p ="2014-02-01"
-        stop_p ="2018-02-01"
-        if mode =='hour': host_path = './CPY012/full/'
-        elif mode =='day': host_path = './output_cpy012/Daily/'
+        # start_p ="2014-02-01"
+        # stop_p ="2018-02-01"
     else: print('error nothing return from station sel') 
     return target,start_p,stop_p,host_path
 

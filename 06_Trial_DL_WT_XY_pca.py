@@ -15,6 +15,7 @@ from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.utils import plot_model
 import pywt
 np.random.seed(42)
 ############# Keras ###################
@@ -32,11 +33,12 @@ tf.compat.v1.keras.backend.set_session(sess)
 loading = instant_data()
 df,mode = loading.hourly_instant(),'hour'
 # df,mode = loading.daily_instant(),'day'
-if mode =='hour': n_past,n_future = 24*7,72
+if mode =='hour': n_past,n_future = 24*6,72
 elif mode =='day': n_past,n_future = 60,30
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
 DLtype = 'split_4wave_PCA'
+split_date = '2016-11-01'
 #------------ DL PARAMETER ---------------------#
 callback_early_stopping = EarlyStopping(monitor='val_loss',patience=5, verbose=2)
 reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-5 * 0.90 ** x)
@@ -45,18 +47,18 @@ callbacks = [callback_early_stopping,reduce_lr]
 
 
 #--------------------------- 2 Yr Edit -----------------------------------#
-host_path = './CPY012/2Yr_flood/'
-start_p = '2016-01-01'
-split_date = '2017-05-10'
-stop_p = '2018-01-01'
-n_pca = 7
+# host_path = './CPY012/2Yr_flood/'
+# start_p = '2016-01-01'
+# split_date = '2017-05-10'
+# stop_p = '2018-01-01'
 
+n_pca = 4
 syn=''
 # Yscale = False # scaler Y before put in model 
 allscale = True # scale X before put in model
 w_std = False # standardize before wavelet transform
 #-----------------------Baseline / Hybrid -----------------------------------#
-save_path =host_path+'06_wtXY_PCA'
+save_path =host_path+'06_wtXY_PCA4'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 #----------------------------------------------------------#
@@ -244,6 +246,7 @@ def build_mod_cnn1d():
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(optimizer='adam', loss='mse')    
     model.summary()
+    plot_model(model, to_file='model_{}.png'.format(syn), show_shapes=True)
     return model
 def build_lstm():
     global n_past,n_future,n_features,n_pca
@@ -258,6 +261,7 @@ def build_lstm():
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(loss='mse', optimizer='adam')
     model.summary()
+    plot_model(model, to_file='model_{}.png'.format(syn), show_shapes=True)
     return model
 def build_cnn1d():
     global n_past,n_future,n_features
@@ -274,6 +278,7 @@ def build_cnn1d():
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(optimizer='adam', loss='mse')    
     model.summary()
+    plot_model(model, to_file='model_{}.png'.format(syn), show_shapes=True)
     return model
 #---------------------------#    
 def run_code_editv2(model,X,Y,batch_size):

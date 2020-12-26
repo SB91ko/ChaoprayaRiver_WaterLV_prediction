@@ -30,7 +30,7 @@ def plot_corr(data,syn):
     sns.heatmap(data.corr(), annot = False, vmin=-1, vmax=1, center= 0,mask=mask)
     plt.savefig(save_path+'{}lag{}.png'.format(syn,out_t_step), bbox_inches='tight')
     return
-
+#--------------------------------------------------------------#
 def linear():
     global trainX,trainY,testX,testY,syn
     start_time = time.time()
@@ -82,7 +82,7 @@ def var(data):
     start_time_ = time.time()
     # train,test = data[:int(0.7*(len(data)))],data[int(0.7*(len(data))):]
     data = data.interpolate(limit=30000000,limit_direction='both').astype('float32')
-    split_date = '2017-01-01'
+    #split_date = '2017-01-01'
     train,test = data[:split_date],data[split_date:]
 
     if DOpca: steps = [('scale',StandardScaler()),('pca', PCA(n_components =n_pca))]
@@ -110,10 +110,10 @@ def var(data):
     testY = pd.Series(data=(test.iloc[:,0]),index=test.index)
     time_ = time.time() - start_time_
     return trainPredict,testPredict,time_,trainY,testY
+#-----------------------------------------------------------#
 def forecast_accuracy(forecast, actual,title):
 
     mape = np.mean(np.abs(forecast - actual)/np.abs(actual))  # MAPE
-    
     mae = np.mean(np.abs(forecast - actual))    # MAE
     mpe = np.mean((forecast - actual)/actual)   # MPE
     rmse = np.mean((forecast - actual)**2)**.5  # RMSE
@@ -153,11 +153,13 @@ target,start_p,stop_p,host_path=station_sel(st,mode)
 if mode =='hour': n_past,n_future = 96,72
 elif mode =='day': n_past,n_future = 60,30
 
-host_path = './CPY012/2Yr_flood/'
-start_p = '2016-01-01'
-split_date = '2017-05-10'
-stop_p = '2018-01-01'
-n_pca = 7
+#host_path = './CPY012/2Yr_flood/'
+#start_p = '2016-01-01'
+#split_date = '2017-05-10'
+#stop_p = '2018-01-01'
+
+n_pca = 4
+split_date = '2016-11-01'
 # *********************2 Yr trail**********************
 # split_date = '2015-06-11'
 # stop_p = '2016/02/01'
@@ -187,9 +189,8 @@ def call_data():
 
 if __name__ == "__main__":  
 
-    for out_t_step in (range(1,n_future+1)):    
+    for out_t_step in (range(33,n_future+1)):    
         cutoff=0.3
-        
         data = call_data()
         X,Y,_ = to_supervise(data,target,out_t_step)
         trainX, testX = X[:split_date].dropna(),X[split_date:].dropna()
@@ -208,7 +209,6 @@ if __name__ == "__main__":
         n_past='all'
         print(cutoff,out_t_step,'  LR time......',use_t)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
-        
         ######## VAR ################
         # syn = 'VAR_pca_m{}_t{}'.format(cutoff,str(out_t_step))
         # trainPredict,testPredict,time_,train,test =var(data)
@@ -217,18 +217,18 @@ if __name__ == "__main__":
         # print(cutoff,out_t_step,'  VAR time......',time_)
         # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,time_,save_path,n_past,n_features,n_future=1)
         # ### SVR ################
-        syn = 'SVR_pcam{}_t{}'.format(cutoff,str(out_t_step))
-        trainPredict,testPredict,use_t = svr()
-        use_time = use_t
-        n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
-        n_past='all'
-        print(cutoff,out_t_step,'  SVR time......',use_t)
-        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=True)
+        #syn = 'SVR_pcam{}_t{}'.format(cutoff,str(out_t_step))
+        #trainPredict,testPredict,use_t = svr()
+        #use_time = use_t
+        #n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
+        #n_past='all'
+        #print(cutoff,out_t_step,'  SVR time......',use_t)
+        #record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=True)
         ###### RF ################
-        syn = 'RF_m{}_t{}'.format(cutoff,str(out_t_step))
+        syn = 'RF_pcam{}_t{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,use_t = rf()
         use_time = use_t
-        n_features = 'Mars{}_'.format(cutoff)
+        n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
         n_past='all'
         print(cutoff,out_t_step,'  RF time......',use_t)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
@@ -245,20 +245,20 @@ if __name__ == "__main__":
         print(cutoff,out_t_step,'  LR time......',use_t)
         record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
         ######## VAR ################
-        # syn = 'VAR_pca_m{}_t{}'.format(cutoff,str(out_t_step))
+        # syn = 'VAR_m{}_t{}'.format(cutoff,str(out_t_step))
         # trainPredict,testPredict,time_,train,test =var(data)
-        # n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
+        # n_features = 'Mars{}'.format(cutoff)
         # n_past='all'
         # print(cutoff,out_t_step,'  VAR time......',time_)
         # record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,time_,save_path,n_past,n_features,n_future=1)
         # ### SVR ################
-        syn = 'SVR_pcam{}_t{}'.format(cutoff,str(out_t_step))
-        trainPredict,testPredict,use_t = svr()
-        use_time = use_t
-        n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
-        n_past='all'
-        print(cutoff,out_t_step,'  SVR time......',use_t)
-        record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=True)
+        #syn = 'SVR_m{}_t{}'.format(cutoff,str(out_t_step))
+        #trainPredict,testPredict,use_t = svr()
+        #use_time = use_t
+        #n_features = 'Mars{}'.format(cutoff)
+        #n_past='all'
+        #print(cutoff,out_t_step,'  SVR time......',use_t)
+        #record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=True)
         ###### RF ################
         syn = 'RF_m{}_t{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,use_t = rf()

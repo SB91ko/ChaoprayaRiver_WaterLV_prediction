@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-split_date = '2017-05-10'
+split_date = '2016-11-01'
 
 
 def real_eva_error(Y,Y_hat):
@@ -46,48 +46,42 @@ def plot_moonson_l(save_path,trainY,testY,trainPredict,testPredict,syn):
     mse,nse,r2,rmse,mae = real_eva_error(monsoon_scope(trainY), monsoon_scope(trainPredict),)
     Tmse,Tnse,Tr2,Trmse,Tmae = real_eva_error(monsoon_scope(testY), monsoon_scope(testPredict),)
 
-    fig,ax =  plt.subplots(2,1,figsize=(6.4, 4.8))
+    def plot_out(monsoon,truemonsoon):
+        fig,ax =  plt.subplots(2,1,figsize=(6.4, 4.8))
+        fig.autofmt_xdate(rotation=45)
+        if truemonsoon :
+            fig.suptitle('\nMonsoon season:'+syn+'\nTrain MSE: %.3f | NSE: %.3f | MAE score: %.3f' % (mse,nse,mae)+'\nTest  MSE: %.3f | NSE: %.3f | MAE score: %.3f' % (Tmse,Tnse,Tmae))
+        sel_m = trainY.iloc[(trainY.index.month.isin(monsoon))]
+        Tsel_m = trainPredict.iloc[(trainPredict.index.month.isin(monsoon))]
+        
+        sel_2016 = sel_m.iloc[(sel_m.index.year.isin([2016]))]
+        Tsel_2016 = Tsel_m.iloc[(Tsel_m.index.year.isin([2016]))]
+        ax[0].plot(sel_2016,label='Y_2016')
+        ax[0].plot(Tsel_2016,label='Yhat_2016')
+        ax[0].set_title(' Year 2016')
+        ax[0].legend(loc='upper left')
+
+        sel_m = testY.iloc[(testY.index.month.isin(monsoon))]
+        Tsel_m = testPredict.iloc[(testPredict.index.month.isin(monsoon))]
+        sel_2017 = sel_m.iloc[(sel_m.index.year.isin([2017]))]
+        Tsel_2017 = Tsel_m.iloc[(Tsel_m.index.year.isin([2017]))]
+        ax[1].plot(sel_2017,label='Y_2017')
+        ax[1].plot(Tsel_2017,label='Yhat_2017')
+        ax[1].set_title('Year 2017')
+        ax[1].legend(loc='upper left')
+
+        plt.tight_layout()
+        if truemonsoon: 
+            fig.savefig(save_path+'/monsoon_line_{}.png'.format(syn), dpi=200, bbox_inches='tight') 
+        else: 
+            fig.savefig(save_path+'/zoom_line_{}.png'.format(syn), dpi=200, bbox_inches='tight') 
+        fig.clear()
+        plt.close(fig)
     monsoon = [8,9,10]
-    fig.autofmt_xdate(rotation=45)
-    fig.suptitle('\nMonsoon season:'+syn+'\nTrain MSE: %.3f | NSE: %.3f | MAE score: %.3f' % (mse,nse,mae)+'\nTest  MSE: %.3f | NSE: %.3f | MAE score: %.3f' % (Tmse,Tnse,Tmae))
-    sel_m = trainY.iloc[(trainY.index.month.isin(monsoon))]
-    Tsel_m = trainPredict.iloc[(trainPredict.index.month.isin(monsoon))]
+    plot_out(monsoon,True)
+    general_zoom = [6,7]
+    plot_out(general_zoom,False)
 
-    # sel_2014 = sel_m.iloc[(sel_m.index.year.isin([2014]))]
-    # Tsel_2014 = Tsel_m.iloc[(Tsel_m.index.year.isin([2014]))]
-    # ax[0][0].plot(sel_2014,label='Y_2014')
-    # ax[0][0].plot(Tsel_2014,label='Yhat_2014')
-    # ax[0][0].set_title(' Year 2014')
-    # ax[0][0].legend()
-
-    # sel_2015 = sel_m.iloc[(sel_m.index.year.isin([2015]))]
-    # Tsel_2015 = Tsel_m.iloc[(Tsel_m.index.year.isin([2015]))]
-    # ax[0][1].plot(sel_2015,label='Y_2015')
-    # ax[0][1].plot(Tsel_2015,label='Yhat_2015')
-    # ax[0][1].set_title('Year 2015')
-    # ax[0][1].legend()
-    
-    sel_2016 = sel_m.iloc[(sel_m.index.year.isin([2016]))]
-    Tsel_2016 = Tsel_m.iloc[(Tsel_m.index.year.isin([2016]))]
-    ax[0].plot(sel_2016,label='Y_2016')
-    ax[0].plot(Tsel_2016,label='Yhat_2016')
-    ax[0].set_title(' Year 2016')
-    ax[0].legend(loc='upper left')
-
-    sel_m = testY.iloc[(testY.index.month.isin(monsoon))]
-    Tsel_m = testPredict.iloc[(testPredict.index.month.isin(monsoon))]
-    sel_2017 = sel_m.iloc[(sel_m.index.year.isin([2017]))]
-    Tsel_2017 = Tsel_m.iloc[(Tsel_m.index.year.isin([2017]))]
-    ax[1].plot(sel_2017,label='Y_2017',color='orange')
-    ax[1].plot(Tsel_2017,label='Yhat_2017',color='red')
-    ax[1].set_title('Year 2017')
-    ax[1].legend(loc='upper left')
-
-    plt.tight_layout()
-    fig.savefig(save_path+'/monsoon_line_{}.png'.format(syn), dpi=200, bbox_inches='tight') 
-    fig.clear()
-    plt.close(fig)
-    
 def monsoon_cal(trainY,testY,trainPredict,testPredict,syn):        
     m_trainPredict = monsoon_scope(trainPredict)
     m_testPredict = monsoon_scope(testPredict)
@@ -113,7 +107,7 @@ def plotgraph(target,save_path,trainY,testY,trainPredict,testPredict,syn):
     # plt.plot(trainPredict.index,trainPredict, label = "Predict_train",color='g')
     trainPredict.plot(label = "Predict_train",color='g',lw=1)
     testPredict.plot(label = "Predict_test",color='r',lw=1)
-    ax.scatter(x=trainY.index,y=trainY,marker='.',label='Actual_train',alpha=0.3,edgecolor='b',facecolor='None')
+    ax.scatter(x=trainY.index,y=trainY,marker='.',label='Actual_train',alpha=0.3,edgecolor='lightskyblue',facecolor='None')
     ax.scatter(x=testY.index,y=testY,marker='.',label='Actual_test',alpha=0.3,edgecolor='orange',facecolor='None')
 
     ax.set_title('[{}]\n'.format(syn)+'Water Level {} Forecast vs Actuals\n'.format(target)+'Train MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (mse,nse,r2)+'\nTest  MSE: %.3f | NSE: %.3f | R2 score: %.3f' % (Tmse,Tnse,Tr2))
@@ -165,9 +159,10 @@ def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,
         if d in [0,11,23,47,71]: 
             plotgraph(target,save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new) 
             plot_moonson_l(save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn)
+            plot_rsquare(save_path,Y_t,Yhat_t,syn_new)
 
         mon_df = monsoon_cal(Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new) 
-        plot_rsquare(save_path,Y_t,Yhat_t,syn_new)
+        
         
         #-----------------------
         print('{} saved !'.format(d+1))
