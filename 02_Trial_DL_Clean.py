@@ -10,7 +10,7 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tensorflow.keras.callbacks import EarlyStopping
-
+from tensorflow.keras.utils import plot_model
 np.random.seed(42)
 #----------------- Keras-----------------##
 config = tf.compat.v1.ConfigProto()
@@ -58,7 +58,7 @@ target,start_p,stop_p,host_path=station_sel(st,mode)
 split_date = '2016-11-01'
 n_pca = 4
 #------------- SETTING -------------------------------------#
-DLtype = 'Original_DL'
+DLtype = '02_DL'
 syn = ''
 Yscale = False
 allscale = True
@@ -74,6 +74,7 @@ def split_xy(data,n_past,n_future):
     x = x.reshape((x.shape[0], x.shape[1],n_features))
     y = y[:,:,0]
     return x,y
+##-------------Shallow model-------------------------##    
 def build_lstm():
     global n_past,n_future,n_features
     input = keras.Input(shape=(n_past, int(n_features)))
@@ -123,17 +124,53 @@ def build_ann():
     global n_past,n_future,n_features
     input = keras.Input(shape=(n_past, int(n_features)))
     x = layers.Flatten()(input)
-    x = layers.Dense(1000, activation='relu')(x)
-    x = layers.Dropout(0.2)(x)
-    x = layers.Dense(500, activation='relu')(x)
-    x = layers.Dropout(0.2)(x)
     x = layers.Dense(200, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(100, activation='relu')(x)
     x = layers.Dense(n_future)(x)
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(optimizer='adam', loss='mse')    
     model.summary()
     return model
+##-----------------Deep model ----------------------##
+def build_lstm_v2():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    # x = layers.LSTM(200, activation='relu', input_shape=(n_past, n_features),return_sequences=False)(input)
+    x = layers.CuDNNLSTM(400)(input)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(200, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(n_future)(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(loss='mse', optimizer='adam')
+    model.summary()
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
+    return model
 
+def build_mod2_cnn1d():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(input)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = layers.Flatten()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.BatchNormalization()(x) # added
+    x = layers.Dense(1000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(500)(x)
+    x = layers.Dense(200)(x)
+    x = layers.Dense(n_future, activation='linear')(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(optimizer='adam', loss='mse')    
+    model.summary()
+    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
+    return model
 def run_code(model,batch_size,syn):
     global target,mode,df,y_train,y_test,X_train,X_test
     verbose, epochs = 1, 100
@@ -201,7 +238,11 @@ X_train, y_train = split_xy(train,n_past,n_future)
 X_test, y_test = split_xy(test,n_past,n_future)
 
 for batch_size in [16,32]:
-    run_code(build_cnn1d(),batch_size,'CNN1D_v2_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    run_code(build_lstm(),batch_size,'CuDNNLSTM_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    run_code(build_ann(),batch_size,'ANN_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    # run_code(build_cnn1d(),batch_size,'CNN1D_v2_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    # run_code(build_lstm(),batch_size,'CuDNNLSTM_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    # run_code(build_ann(),batch_size,'ANN_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
     # run_code(build_ende_lstm(),batch_size,'AutoLSTM_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+
+
+    run_code(build_lstm_v2(),batch_size,'CuDNNLSTM(big)_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    run_code(build_mod2_cnn1d(),batch_size,'dCNN(linear)_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))

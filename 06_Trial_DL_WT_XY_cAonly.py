@@ -37,7 +37,7 @@ if mode =='hour': n_past,n_future = 24*6,72
 elif mode =='day': n_past,n_future = 60,30
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
-DLtype = 'split_wave_cAonly'
+DLtype = '06_Lv1wave_cAonly'
 #------------ DL PARAMETER ---------------------#
 callback_early_stopping = EarlyStopping(monitor='val_loss',patience=5, verbose=2)
 reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-5 * 0.90 ** x)
@@ -259,34 +259,6 @@ def build_lstm_v2():
     model.summary()
     plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
     return model
-#---------------------------#    
-def run_code_editv2(model,X,Y,batch_size):
-    global target,mode
-    verbose, epochs = 1, 100
-    history = model.fit(X[0],Y[0],epochs=epochs,validation_data=(X[1],Y[1]),batch_size=batch_size,verbose=verbose,callbacks=callbacks)
-    def history_plot(history_model,name):   
-        fig, ax = plt.subplots(figsize=(6.4, 4.8))
-        ax.plot (history_model.history['loss'])
-        ax.plot (history_model.history['val_loss'])
-        ax.set_title ('model loss:{}'.format(name))
-        ax.set_xlabel('epoch')
-        ax.legend(['train','val'],loc='upper left')
-        fig.savefig(save_path+'/loss_{}.png'.format(name), dpi=100, bbox_inches='tight') 
-        fig.clear()
-        plt.close(fig)
-    history_plot(history,syn)    
-
-    trainPredict = model.predict(X[0])
-    testPredict = model.predict(X[1])
-    # # ---------- Inverse ------------------#
-    # # if Yscale:
-    # #     y_train = scaler_tar.inverse_transform(y_train)
-    # #     trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train.shape))
-    # #     y_test = scaler_tar.inverse_transform(y_test)
-    # #     testPredict = scaler_tar.inverse_transform(testPredict.reshape(y_test.shape))
-    # #---------------result-------------------- #
-    # record_list_result(syn,df,mode,Y[0],Y[1],trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
-    return trainPredict,testPredict
 #------------------------- Main ---------------------------------#
 df = df[start_p:stop_p]
 data = df
@@ -362,37 +334,30 @@ def autosplit(data):
     X_train, y_train = split_xy(train,n_past,n_future)
     X_test, y_test= split_xy(test,n_past,n_future)
     return [X_train,X_test],[y_train,y_test]
-#--------------------------------
+#-----------------------------------------------#    
+def run_code_editv2(model,X,Y,batch_size):
+    global target,mode
+    verbose, epochs = 1, 100
+    history = model.fit(X[0],Y[0],epochs=epochs,validation_data=(X[1],Y[1]),batch_size=batch_size,verbose=verbose,callbacks=callbacks)
+    def history_plot(history_model,name):   
+        fig, ax = plt.subplots(figsize=(6.4, 4.8))
+        ax.plot (history_model.history['loss'])
+        ax.plot (history_model.history['val_loss'])
+        ax.set_title ('model loss:{}'.format(name))
+        ax.set_xlabel('epoch')
+        ax.legend(['train','val'],loc='upper left')
+        fig.savefig(save_path+'/loss_{}.png'.format(name), dpi=100, bbox_inches='tight') 
+        fig.clear()
+        plt.close(fig)
+    history_plot(history,syn)    
 
-# def run_code(model,batch_size,syn):
-#     global target,mode,df,X_train,y_train,X_test,y_test,wX_train,wX_test
-#     verbose, epochs = 1, 100
-#     history = model.fit([X_train,wX_train],y_train,epochs=epochs,validation_data=([X_test,wX_test],y_test),batch_size=batch_size,verbose=verbose,callbacks=callbacks)
-#     def history_plot(history_model,name):   
-#         fig, ax = plt.subplots(figsize=(6.4, 4.8))
-#         ax.plot (history_model.history['loss'])
-#         ax.plot (history_model.history['val_loss'])
-#         ax.set_title ('model loss:{}'.format(name))
-#         ax.set_xlabel('epoch')
-#         ax.legend(['train','val'],loc='upper left')
-#         fig.savefig(save_path+'/loss_{}.png'.format(name), dpi=100, bbox_inches='tight') 
-#         fig.clear()
-#         plt.close(fig)
-#     history_plot(history,syn)    
-    
-#     trainPredict = model.predict([X_train,wX_train])
-#     testPredict = model.predict([X_test,wX_test])
-#     # ---------- Inverse ------------------#
-#     if Yscale:
-#         y_train = scaler_tar.inverse_transform(y_train)
-#         trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train.shape))
-#         y_test = scaler_tar.inverse_transform(y_test)
-#         testPredict = scaler_tar.inverse_transform(testPredict.reshape(y_test.shape))
-#     record_list_result(syn,df,mode,y_train,y_test,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
-
+    trainPredict = model.predict(X[0])
+    testPredict = model.predict(X[1])
+    return trainPredict,testPredict
 def wav_dl_wav_run(model_list,batch,syn):
 	X,_=autosplit(data_cA3)
 	cA3ytrain,cA3ytest = run_code_editv2(model_list,X,yA3_ori,batch)
+    
 	_,Y=autosplit(data_mar)
 	y_train,y_test = Y[0],Y[1]
 

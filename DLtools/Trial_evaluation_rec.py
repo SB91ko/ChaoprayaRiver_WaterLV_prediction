@@ -34,14 +34,12 @@ def plot_rsquare(save_path,testY,testPredict,syn):
     fig.savefig(save_path+'/r2_{}.png'.format(syn), dpi=300, bbox_inches='tight') 
     fig.clear()
     plt.close(fig)
-
 def monsoon_scope(df):
     monsoon=[8,9,10]
     # non_monsoon=[1,2,3,4,5,6,7,11,12]
     # df.iloc[(df.index.month.isin(non_monsoon))]=np.NaN
     # return df.dropna()
     return df.iloc[(df.index.month.isin(monsoon))]
-
 def plot_moonson_l(save_path,trainY,testY,trainPredict,testPredict,syn):
     mse,nse,r2,rmse,mae = real_eva_error(monsoon_scope(trainY), monsoon_scope(trainPredict),)
     Tmse,Tnse,Tr2,Trmse,Tmae = real_eva_error(monsoon_scope(testY), monsoon_scope(testPredict),)
@@ -81,7 +79,6 @@ def plot_moonson_l(save_path,trainY,testY,trainPredict,testPredict,syn):
     plot_out(monsoon,True)
     general_zoom = [6,7]
     plot_out(general_zoom,False)
-
 def monsoon_cal(trainY,testY,trainPredict,testPredict,syn):        
     m_trainPredict = monsoon_scope(trainPredict)
     m_testPredict = monsoon_scope(testPredict)
@@ -116,8 +113,6 @@ def plotgraph(target,save_path,trainY,testY,trainPredict,testPredict,syn):
     fig.clf()
     fig.clear()
     plt.close(fig)
-
-
 def list_eva_error(Y,Y_hat,n_out):
     mse_l,nse_l,r2_l = list(),list(),list()
     rmse_l,mae_l = list(),list()
@@ -227,12 +222,10 @@ def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,us
 
     ##########################
     if rec_result: 
-        
         res_train=pd.DataFrame({'model':syn,'Y':trainY,'Yhat':trainPredict,'type': 'train'})
         res_test=pd.DataFrame({'model':syn,'Y':testY,'Yhat':testPredict,'type': 'test'})
 
         result_ = pd.concat([res_train,res_test],axis=0)
-        
         result_.to_csv(save_path+'/result{}.csv'.format(syn))
     ######################
     return testY,testPredict

@@ -37,7 +37,7 @@ if mode =='hour': n_past,n_future = 24*6,72
 elif mode =='day': n_past,n_future = 60,30
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
-DLtype = 'split_4wave_PCA'
+DLtype = '05_Lv3wave_PCA'
 split_date = '2016-11-01'
 #------------ DL PARAMETER ---------------------#
 callback_early_stopping = EarlyStopping(monitor='val_loss',patience=5, verbose=2)
@@ -192,7 +192,7 @@ def extract_target_signal(data,staion):
     yD1 = [yD1_train,yD1_test]
     return yA3,yD3,yD2,yD1
 yA3_ori,yD3_ori,yD2_ori,yD1_ori= extract_target_signal(wdata,'CPY012')
-#------------------------------------------------------
+
 #------------ X data 
 wdata = df_wavelet(sc_data,w_std)
 if allscale:
@@ -280,7 +280,144 @@ def build_cnn1d():
     model.summary()
     plot_model(model, to_file='model_{}.png'.format(syn), show_shapes=True)
     return model
-#---------------------------#    
+#---------------------------#
+# #---------------------- Deep MODEL ------------------------------------#
+def build_mod2_cnn1d():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(input)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = layers.Flatten()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.BatchNormalization()(x) # added
+    x = layers.Dense(1000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(500)(x)
+    x = layers.Dense(200)(x)
+    x = layers.Dense(n_future, activation='linear')(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(optimizer='adam', loss='mse')    
+    model.summary()
+    
+    return model
+def build_orimod_cnn1d():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(input)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    #x = layers.BatchNormalization()(x) # added
+    x = layers.MaxPooling1D(pool_size=3)(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.MaxPooling1D(pool_size=3)(x)
+    x = layers.Flatten()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(1000)(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(500)(x)
+    x = layers.Dense(200)(x)
+    x = layers.Dense(n_future, activation='linear')(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(optimizer='adam', loss='mse')    
+    model.summary()
+    
+    return model
+def build_lstm():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    # x = layers.LSTM(200, activation='relu', input_shape=(n_past, n_features),return_sequences=False)(input)
+    x = layers.CuDNNLSTM(200,input_shape=(n_past, n_features),return_sequences=False)(input)
+    # x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(100, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(n_future)(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(loss='mse', optimizer='adam')
+    model.summary()
+    
+    return model
+def build_cnn1d():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(input)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = layers.Flatten()(x)
+    x = layers.Dropout(0.3)(x)
+    x = layers.Dense(100, activation='relu')(x)
+    x = layers.Dropout(0.3)(x)
+    x = layers.Dense(50, activation='relu')(x)
+    x = layers.Dense(n_future)(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(optimizer='adam', loss='mse')    
+    model.summary()
+    
+    return model
+def build_ann():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    x = layers.Flatten()(input)
+    x = layers.Dense(2000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(1000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(200, activation='relu')(x)
+    x = layers.Dense(n_future,activation='linear')(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(optimizer='adam', loss='mse')    
+    model.summary()
+    
+    return model
+def build_lstm_v2():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    # x = layers.LSTM(200, activation='relu', input_shape=(n_past, n_features),return_sequences=False)(input)
+    x = layers.CuDNNLSTM(400)(input)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(200, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(n_future)(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(loss='mse', optimizer='adam')
+    model.summary()
+    
+    return model
+def build_lstm_vv2():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    # x = layers.LSTM(200, activation='relu', input_shape=(n_past, n_features),return_sequences=False)(input)
+    x = layers.CuDNNLSTM(2000)(input)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(1000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(n_future)(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(loss='mse', optimizer='adam')
+    model.summary()
+    return model
+def build_linear_lstm():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    # x = layers.LSTM(200, activation='relu', input_shape=(n_past, n_features),return_sequences=False)(input)
+    x = layers.CuDNNLSTM(200,input_shape=(n_past, n_features),return_sequences=False)(input)
+    # x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(100, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(n_future,activation='linear')(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(loss='mse', optimizer='adam')
+    model.summary()
+    return model
+
+#---------------------------#
 def run_code_editv2(model,X,Y,batch_size):
     global target,mode
     verbose, epochs = 1, 100
@@ -293,8 +430,7 @@ def wav_dl_wav_run(model_list,batch,syn):
     global n_features
     check_PCA=True
     
-    if check_PCA: n_features = n_pca
-
+    n_features = n_pca
     X,_=autosplit(data_cA3,check_PCA)
     cA3ytrain,cA3ytest = run_code_editv2(model_list[0],X,yA3_ori,batch)
     X,_=autosplit(data_cD3,check_PCA)
@@ -311,6 +447,7 @@ def wav_dl_wav_run(model_list,batch,syn):
     _,Y=autosplit(data_mar)
     y_train,y_test = Y[0],Y[1]
     record_list_result(syn,df,DLtype,y_train,y_test,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
+    n_features = n_pca
 ##----------- Run Experiment -----------------##
 for batch_size in [16,32]:
     model = [build_cnn1d(),build_cnn1d(),build_cnn1d(),build_cnn1d()]
@@ -318,4 +455,18 @@ for batch_size in [16,32]:
 
 for batch_size in [16,32]:
     model_B = [build_lstm(),build_mod_cnn1d(),build_mod_cnn1d(),build_mod_cnn1d()]
-    wav_dl_wav_run(model_B,batch_size,'w_best_LSTM_deepCNNx4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    wav_dl_wav_run(model_B,batch_size,'wLSTM_dCNNx4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+
+for batch_size in [16,32]:
+    model_A = [build_lstm_v2(),build_orimod_cnn1d(),build_orimod_cnn1d(),build_orimod_cnn1d()]
+    wav_dl_wav_run(model_A,batch_size,'w_LSTM(big)_dCNN(linear)x3_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    model_B2 = [build_lstm(),build_mod2_cnn1d(),build_mod2_cnn1d(),build_mod2_cnn1d()]
+    wav_dl_wav_run(model_B2,batch_size,'w_LSTM_dCNN(bat)x3_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    model_C = [build_lstm_vv2(),build_orimod_cnn1d(),build_orimod_cnn1d(),build_orimod_cnn1d()]
+    wav_dl_wav_run(model_C,batch_size,'w_LSTM(vbig)_dCNN(linear)x3_ANN_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    model_D = [build_lstm_v2(),build_linear_lstm(),build_linear_lstm(),build_linear_lstm()]
+    wav_dl_wav_run(model_D,batch_size,'w_LSTM(big)_(linear)lstmx3_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    model_E = [build_lstm(),build_lstm(),build_lstm(),build_lstm()]
+    wav_dl_wav_run(model_E,batch_size,'w_LSTMx4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+    model_F = [build_lstm_v2(),build_lstm_v2(),build_lstm_v2(),build_lstm_v2()]
+    wav_dl_wav_run(model_F,batch_size,'w_LSTM(big)x4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))

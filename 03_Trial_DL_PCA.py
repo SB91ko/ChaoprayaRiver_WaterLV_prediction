@@ -153,7 +153,7 @@ def run_code(model,batch_size,syn):
         trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train.shape))
         y_test = scaler_tar.inverse_transform(y_test)
         testPredict = scaler_tar.inverse_transform(testPredict.reshape(y_test.shape))
-    record_list_result(syn,df,mode,y_train,y_test,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
+    record_list_result(syn,df,'03_DL_PCA',y_train,y_test,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
 
 
 #------------------------- Main ---------------------------------#
@@ -177,7 +177,6 @@ def Preprocess_pca(input):
     sc_input = pipe.transform(input)
     sc_input = pd.DataFrame(sc_input, index=input.index)
     return scaler,sc_input
-
 # X data
 _,sc_data = Preprocess_pca(data_mar)
 # Y data
