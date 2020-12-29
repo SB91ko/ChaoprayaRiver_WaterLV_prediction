@@ -153,7 +153,7 @@ def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,
         syn_new = syn+'_t'+str(d+1)
         if d in [0,11,23,47,71]: 
             plotgraph(target,save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new) 
-            plot_moonson_l(save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn)
+            plot_moonson_l(save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new)
             plot_rsquare(save_path,Y_t,Yhat_t,syn_new)
 
         mon_df = monsoon_cal(Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new) 
@@ -180,7 +180,7 @@ def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,
             error.set_index(idx,inplace=True)
     error.T.to_csv(save_path+'/eval.csv',index=False)
     return testY,testPredict
-def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=False):
+def record_alone_result(syn,timestep,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=False):
     mse,nse,r2,rmse,mae = real_eva_error(trainY, trainPredict,)
     Tmse, Tnse,Tr2,Trmse,Tmae = real_eva_error(testY, testPredict,)
     try:
@@ -188,19 +188,19 @@ def record_alone_result(syn,mode,trainY,testY,trainPredict,testPredict,target,us
         testPredict = pd.Series(data=(testPredict),index=testY.index)
     except:  pass
     ##################################
-    plotgraph(target,save_path,trainY,testY,trainPredict,testPredict,syn)
     mon_df = monsoon_cal(trainY,testY,trainPredict,testPredict,syn)
-    ########### R-square ################
-    plot_rsquare(save_path,testY,testPredict,syn)
-    plot_moonson_l(save_path,trainY,testY,trainPredict,testPredict,syn)
+    if timestep in [1,12,24,48,72]:
+        plotgraph(target,save_path,trainY,testY,trainPredict,testPredict,syn)
+        ########### R-square ################
+        plot_rsquare(save_path,testY,testPredict,syn)
+        plot_moonson_l(save_path,trainY,testY,trainPredict,testPredict,syn)
     ###### CSV output######
-    dict_data = {'Model':syn,'Date':n_past,'Feature':n_features,'Time_in':n_past,'Time_out':n_future,'Use time':use_time,
+    dict_data = {'Model':syn,'Timestep':timestep,'Feature':n_features,'Time_in':n_past,'Time_out':n_future,'Use time':use_time,
                 'MSE_trian':mse,'Rmse_trian':rmse,'NSE_train':nse,'R2_train':r2,'MAE_train':mae,
                 'MSE_test':Tmse,'Rmse_test':Trmse,'NSE_test':Tnse,'R2_test':Tr2,'MAE_test':Tmae} 
     
     _df = pd.DataFrame.from_dict(data=dict_data, orient ='index')
     _df = pd.concat([_df,mon_df])
-    
     try:
         error = pd.read_csv(save_path+'/eval.csv',index_col=False)
         error = error.T

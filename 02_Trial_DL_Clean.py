@@ -4,7 +4,8 @@ from DLtools.feature_sel import call_mar
 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler,StandardScaler
+import os
 
 import tensorflow as tf
 from tensorflow import keras
@@ -42,7 +43,7 @@ def split_series(series, n_past, n_future):
 loading = instant_data()
 df,mode = loading.hourly_instant(),'hour'
 # df,mode = loading.daily_instant(),'day'
-if mode =='hour': n_past,n_future = 24*5,72
+if mode =='hour': n_past,n_future = 24*6,72
 elif mode =='day': n_past,n_future = 60,30
 ################################################
 st = 'CPY012'
@@ -59,12 +60,11 @@ split_date = '2016-11-01'
 n_pca = 4
 #------------- SETTING -------------------------------------#
 DLtype = '02_DL'
-syn = ''
+
 Yscale = False
 allscale = True
 #-----------------###
 save_path =host_path+'Baseline_ori'
-import os
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 ##------------------------------------------------##
@@ -129,7 +129,8 @@ def build_ann():
     x = layers.Dense(100, activation='relu')(x)
     x = layers.Dense(n_future)(x)
     model = keras.Model(inputs=[input], outputs=x)
-    model.compile(optimizer='adam', loss='mse')    
+    model.compile(optimizer='adam', loss='mse')  
+    plot_model(model, to_file=save_path+'modelANN_{}.png'.format(syn), show_shapes=True)  
     model.summary()
     return model
 ##-----------------Deep model ----------------------##
@@ -146,7 +147,7 @@ def build_lstm_v2():
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(loss='mse', optimizer='adam')
     model.summary()
-    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
+    plot_model(model, to_file=save_path+'modelLSTM_{}.png'.format(syn), show_shapes=True)
     return model
 
 def build_mod2_cnn1d():
@@ -165,11 +166,12 @@ def build_mod2_cnn1d():
     x = layers.Dropout(0.2)(x)
     x = layers.Dense(500)(x)
     x = layers.Dense(200)(x)
-    x = layers.Dense(n_future, activation='linear')(x)
+    x = layers.Dense(n_future)(x)
+    x = layers.LeakyReLU()(x)
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(optimizer='adam', loss='mse')    
     model.summary()
-    plot_model(model, to_file=save_path+'model_{}.png'.format(syn), show_shapes=True)
+    plot_model(model, to_file=save_path+'modelCNN_{}.png'.format(syn), show_shapes=True)
     return model
 def run_code(model,batch_size,syn):
     global target,mode,df,y_train,y_test,X_train,X_test
@@ -194,6 +196,20 @@ def run_code(model,batch_size,syn):
     testPredict = testPredict.reshape(y_test.shape)
 
     # ---------- Inverse ------------------#
+    scaler = StandardScaler()
+    scaler.fit(y_train)
+
+    sc = StandardScaler()
+    trainPredict = sc.fit_transform(trainPredict)
+    trainPredict = scaler.inverse_transform(trainPredict)
+
+
+    scaler = StandardScaler()
+    scaler.fit(y_test)
+    sc = StandardScaler()
+    testPredict = sc.fit_transform(testPredict)
+    testPredict = scaler.inverse_transform(testPredict)
+
     if Yscale:
         y_train = scaler_tar.inverse_transform(y_train)
         trainPredict = scaler_tar.inverse_transform(trainPredict.reshape(y_train.shape))
@@ -219,30 +235,33 @@ data_mar = move_column_inplace(data_mar,target,0)
 n_features = len(data_mar.columns)
 # SCALE
 if Yscale:
-    syn = syn+'[y_sc]'        
+    # syn = syn+'[y_sc]'        
     scaler_tar = MinMaxScaler()
     scaler_tar.fit(data_mar[target].to_numpy().reshape(-1,1))
     print(data_mar[target].to_numpy().reshape(-1,1).shape)
 
+
+train_ori,test_ori = data_mar[:split_date],data_mar[split_date:]
+_, y_train = split_xy(train_ori,n_past,n_future)
+_, y_test = split_xy(test_ori,n_past,n_future)
+
+
 if allscale:
-    syn = syn+'[X_sc]'  
+    #syn = syn+'[X_sc]'  
     scaler = MinMaxScaler()
     data_mar[data_mar.columns] = scaler.fit_transform(data_mar[data_mar.columns])
-    print(data_mar.columns)
 
 
 ## train test split ##
 # split_date = '2016-11-21'
 train,test = data_mar[:split_date],data_mar[split_date:]
-X_train, y_train = split_xy(train,n_past,n_future)
-X_test, y_test = split_xy(test,n_past,n_future)
-
-for batch_size in [16,32]:
-    # run_code(build_cnn1d(),batch_size,'CNN1D_v2_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    # run_code(build_lstm(),batch_size,'CuDNNLSTM_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    # run_code(build_ann(),batch_size,'ANN_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    # run_code(build_ende_lstm(),batch_size,'AutoLSTM_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+X_train, _ = split_xy(train,n_past,n_future)
+X_test, _ = split_xy(test,n_past,n_future)
 
 
-    run_code(build_lstm_v2(),batch_size,'CuDNNLSTM(big)_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    run_code(build_mod2_cnn1d(),batch_size,'dCNN(linear)_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+for i in range(20):
+    syn=str(i)
+    for batch_size in [16]:
+        run_code(build_ann(),batch_size,'ANN_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+        run_code(build_mod2_cnn1d(),batch_size,'dCNN(linear)_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+        run_code(build_lstm_v2(),batch_size,'CuDNNLSTM(big)_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
