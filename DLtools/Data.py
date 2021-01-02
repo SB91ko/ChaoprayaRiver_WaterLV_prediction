@@ -5,7 +5,6 @@ from tqdm import tqdm
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-
 def check_specific_col(df,column_name='rain1h'):
     """
     Detect columns name which has specific text, i.e. rain1h
@@ -13,11 +12,10 @@ def check_specific_col(df,column_name='rain1h'):
     """
     _cols = [col for col in df.columns if column_name in col]
     return _cols
-########## misc tool ###########
+#--------------# misc tool #--------------#
 def rename(path_name):
     path_name = re.search('[^\/]+$',path_name).group(0)
     return path_name[:-4]
-
 def df_process(file,weather=False):
     if weather == True:
         try:
@@ -34,7 +32,6 @@ def df_process(file,weather=False):
     df['station'] = rename(file)
     df.set_index(['date','station'],inplace=True)
     return df
-
 def open_concat_csv(folder_path,basins):
     all_filenames = [i for i in glob.glob(os.path.join(f'{folder_path}','*.csv'))]
     related_file = list()
@@ -43,11 +40,9 @@ def open_concat_csv(folder_path,basins):
             if x in file :
                 related_file.append(file)
     return related_file
-
 def related_basins(station_df,basins_list):
     station_df = station_df.loc[station_df['basin'].isin(basins_list)]
     return list(station_df['code'])
-
 def del_less_col(df,ratio=.5):
     print("\nBefore del col are...",len(df.columns))
     for col in df.columns:
@@ -56,10 +51,9 @@ def del_less_col(df,ratio=.5):
             df.drop(col, axis=1, inplace=True)
     print("After...",len(df.columns))
     return df
-
 def intersection(lst1, lst2): 
     return list(set(lst1) & set(lst2))
-##########################################################################################################
+#----------------------------------------------------------------#
 class load_data:
     rain_st = pd.read_csv(f'./data/hii-telemetering-batch-data-master/station_metadata-rain.csv')
     water_st = pd.read_csv(f'./data/hii-telemetering-batch-data-master/station_metadata-water-level.csv')
@@ -69,7 +63,6 @@ class load_data:
     path_water = "./data/hii-telemetering-batch-data-master/water-level2007-2020/"
     path_weather = "./data/hii-telemetering-weather-data-master/*/*/"
     path_dam = './data/Dam/clean.csv'
-
     def __init__(self,load_all=True):
         print("START LOADING DATA 2012-2020(July)")
         self.basins = ['แม่น้ำปิง',"แม่น้ำวัง","แม่น้ำยม","แม่น้ำน่าน",'แม่น้ำป่าสัก',"แม่น้ำเจ้าพระยา"]
@@ -91,7 +84,6 @@ class load_data:
             print("==========TOTAL FILE==========")
             print("Rain.............Water.........Weather...........Dam")
             print(self.df_rain.shape, self.df_water.shape, self.df_weather.shape,self.df_dam.shape)
-
     def daily(self):
         if self.df_rain ==None:
             self.df_rain = self.rain_data() # resample('H').pad()        
@@ -219,8 +211,6 @@ class load_data:
             final_df[col] = final_df[col].str.replace(',', '').astype(np.float32)
         final_df = final_df["2013-01-01":"2020-07-31"]
         return del_less_col(final_df)
-
-
 class instant_data:
     rain='./data/instant_data/all/rain.csv'
     water= './data/instant_data/all/water.csv'
@@ -265,7 +255,6 @@ class instant_data:
         df_h = df_h.drop(solar, axis=1)
         # df_h = df_h.drop(close_bkk+solar, axis=1)
         return df_h
-
 def station_sel(st,mode):
     """Select and return station status setting"""
     if st == 'CPY015':
@@ -284,7 +273,6 @@ def station_sel(st,mode):
         # stop_p ="2018-02-01"
     else: print('error nothing return from station sel') 
     return target,start_p,stop_p,host_path
-
 def clearnoise_wl(df_wl):
     water_st = pd.read_csv(f'./data/hii-telemetering-batch-data-master/station_metadata-water-level.csv')
     for col in df_wl.columns:
@@ -313,23 +301,3 @@ if __name__ == "__main__":
 
     dam = loaddata.dam_data()
     dam.to_csv(path+'dam.csv')
-
-
-# def convert_df(ori_df,col):
-#     df = pd.DataFrame()
-#     ori_df = ori_df.dropna().reset_index()
-#     for name,group in ori_df.groupby('station'):
-#         if df.empty:
-#             df = group.set_index("date")[[col]].rename(columns={col:str(name+"_"+col)})
-#         else:
-#             df = df.join(group.set_index("date")[[col]].rename(columns={col:str(name+"_"+col)}))
-#     return df
-
-# def multi_convert_weather_df(df):
-#     cols = list(df.columns) #Exclude, date and Stations col
-#     com_df = pd.DataFrame()
-#     for col in cols:
-#         print(col)
-#         com_df = pd.concat([com_df,convert_df(df,col)])
-#         print(com_df.shape)
-#     return com_df

@@ -388,16 +388,16 @@ def build_lstm_v2():
     model.summary()
     
     return model
-def build_lstm_vv2():
+def build_tanh_lstm():
     global n_past,n_future,n_features
     input = keras.Input(shape=(n_past, int(n_features)))
     # x = layers.LSTM(200, activation='relu', input_shape=(n_past, n_features),return_sequences=False)(input)
-    x = layers.CuDNNLSTM(2000)(input)
-    x = layers.BatchNormalization()(x)
+    x = layers.CuDNNLSTM(1000)(input)
+    # x = layers.BatchNormalization()(x)
     x = layers.Dropout(0.2)(x)
-    x = layers.Dense(1000, activation='relu')(x)
+    x = layers.Dense(500, activation='relu')(x)
     x = layers.Dropout(0.2)(x)
-    x = layers.Dense(n_future)(x)
+    x = layers.Dense(n_future,activation='tanh')(x)
     model = keras.Model(inputs=[input], outputs=x)
     model.compile(loss='mse', optimizer='adam')
     model.summary()
@@ -456,21 +456,9 @@ def wav_dl_wav_run(model_list,batch,syn):
 #     model_B = [build_lstm(),build_mod_cnn1d(),build_mod_cnn1d(),build_mod_cnn1d()]
 #     wav_dl_wav_run(model_B,batch_size,'wLSTM_dCNNx4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
 
-for batch_size in [16,32]:
-    # model_A = [build_lstm_v2(),build_orimod_cnn1d(),build_orimod_cnn1d(),build_orimod_cnn1d()]
-    # wav_dl_wav_run(model_A,batch_size,'w_LSTM(big)_dCNN(linear)x3_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    # # model_B2 = [build_lstm(),build_mod2_cnn1d(),build_mod2_cnn1d(),build_mod2_cnn1d()]
-    # # wav_dl_wav_run(model_B2,batch_size,'w_LSTM_dCNN(bat)x3_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    # # model_C = [build_lstm_vv2(),build_orimod_cnn1d(),build_orimod_cnn1d(),build_orimod_cnn1d()]
-    # # wav_dl_wav_run(model_C,batch_size,'w_LSTM(vbig)_dCNN(linear)x3_ANN_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    # model_D = [build_lstm_v2(),build_linear_lstm(),build_linear_lstm(),build_linear_lstm()]
-    # wav_dl_wav_run(model_D,batch_size,'w_LSTM(big)_(linear)lstmx3_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    # model_E = [build_lstm(),build_lstm(),build_lstm(),build_lstm()]
-    # wav_dl_wav_run(model_E,batch_size,'w_LSTMx4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    # model_F = [build_lstm_v2(),build_lstm_v2(),build_lstm_v2(),build_lstm_v2()]
-    # wav_dl_wav_run(model_F,batch_size,'w_LSTM(big)x4_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    
-    model_D = [build_lstm_v2(),build_linear_lstm(),build_linear_lstm(),build_linear_lstm()]
-    wav_dl_wav_run(model_D,batch_size,'w_LSTM(big)_(linear)lstmx3_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    model_A = [build_lstm_v2(),build_orimod_cnn1d(),build_orimod_cnn1d(),build_orimod_cnn1d()]
-    wav_dl_wav_run(model_A,batch_size,'w_LSTM(big)_dCNN(linear)x3_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+for batch_size in [16]:
+        model_D = [build_lstm_v2(),build_tanh_lstm(),build_tanh_lstm(),build_tanh_lstm()]
+        wav_dl_wav_run(model_D,batch_size,'w_LSTM(big)_(tanh)lstmx3_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+        model_A = [build_lstm_v2(),build_orimod_cnn1d(),build_orimod_cnn1d(),build_orimod_cnn1d()]
+        wav_dl_wav_run(model_A,batch_size,'w_LSTM(big)_dCNN(tanh)x3_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+

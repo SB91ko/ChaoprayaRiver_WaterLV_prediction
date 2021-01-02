@@ -64,7 +64,7 @@ DLtype = '02_DL'
 Yscale = False
 allscale = True
 #-----------------###
-save_path =host_path+'Baseline_ori'
+save_path =host_path+'Baseline_ori_2'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 ##------------------------------------------------##
@@ -259,7 +259,7 @@ X_train, _ = split_xy(train,n_past,n_future)
 X_test, _ = split_xy(test,n_past,n_future)
 
 
-for i in range(20):
+for i in range(10):
     syn=str(i)
     for batch_size in [16]:
         run_code(build_ann(),batch_size,'ANN_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))

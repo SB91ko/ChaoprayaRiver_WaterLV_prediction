@@ -37,7 +37,7 @@ elif mode =='day': n_past,n_future = 60,30
 st = 'CPY012'
 target,start_p,stop_p,host_path=station_sel(st,mode)
 DLtype = '04_Lv3wave'
-#------------ DL PARAMETER ---------------------#
+#---------------- DL PARAMETER ---------------------#
 callback_early_stopping = EarlyStopping(monitor='val_loss',patience=5, verbose=2)
 reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-5 * 0.90 ** x)
 callbacks = [callback_early_stopping,reduce_lr]
@@ -55,7 +55,7 @@ n_pca = 4
 allscale = True # scale X before put in model
 w_std = False # standardize before wavelet transform
 #-----------------------Baseline / Hybrid -----------------------------------#
-save_path =host_path+'06_wtXY_best'
+save_path =host_path+'06_wtXY_best_2'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 #----------------------------------------------------------#

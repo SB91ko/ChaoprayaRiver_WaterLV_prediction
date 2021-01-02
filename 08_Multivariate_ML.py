@@ -166,7 +166,7 @@ split_date = '2016-11-01'
 
 
 #----------------------------------------#
-save_path =host_path+'ML/'
+save_path =host_path+'ML_2/'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 
@@ -202,24 +202,24 @@ for i in range(20):
         ######################################
         # trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
         # print(trainX.shape,trainY.shape,testX.shape,testY.shape)
-        ############ LINEAR ##################
-        syn = start_syn+'linear_pca_m{}_t{}'.format(cutoff,str(out_t_step))
-        trainPredict,testPredict,use_t = linear()
-        use_time = use_t
-        n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
-        n_past='all'
-        print(cutoff,out_t_step,'  LR time......',use_t)
-        record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        # ############ LINEAR ##################
+        # syn = start_syn+'linear_pca_m{}_t{}'.format(cutoff,str(out_t_step))
+        # trainPredict,testPredict,use_t = linear()
+        # use_time = use_t
+        # n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
+        # n_past='all'
+        # print(cutoff,out_t_step,'  LR time......',use_t)
+        # record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
         
-        # ### SVR ################
+        # # ### SVR ################
         
-        syn = start_syn+'SVR_pcam{}_t{}'.format(cutoff,str(out_t_step))
-        trainPredict,testPredict,use_t = svr()
-        use_time = use_t
-        n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
-        n_past='all'
-        print(cutoff,out_t_step,'  SVR time......',use_t)
-        record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        # syn = start_syn+'SVR_pcam{}_t{}'.format(cutoff,str(out_t_step))
+        # trainPredict,testPredict,use_t = svr()
+        # use_time = use_t
+        # n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
+        # n_past='all'
+        # print(cutoff,out_t_step,'  SVR time......',use_t)
+        # record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
         # ###### RF ################
         
         syn = start_syn+'RF_pcam{}_t{}'.format(cutoff,str(out_t_step))
@@ -235,24 +235,24 @@ for i in range(20):
         DOpca=False
         ############ LINEAR ##################
         
-        syn =start_syn+'linear_m{}_t{}'.format(cutoff,str(out_t_step))
-        trainPredict,testPredict,use_t = linear()
-        use_time = use_t
-        n_features = 'Mars{}'.format(cutoff)
-        n_past='all'
-        print(cutoff,out_t_step,'  LR time......',use_t)
-        record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        # syn =start_syn+'linear_m{}_t{}'.format(cutoff,str(out_t_step))
+        # trainPredict,testPredict,use_t = linear()
+        # use_time = use_t
+        # n_features = 'Mars{}'.format(cutoff)
+        # n_past='all'
+        # print(cutoff,out_t_step,'  LR time......',use_t)
+        # record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
         
-        # # ### SVR ################
+        # # # ### SVR ################
         
-        syn = start_syn+'SVR_m{}_t{}'.format(cutoff,str(out_t_step))
-        trainPredict,testPredict,use_t = svr()
-        use_time = use_t
-        n_features = 'Mars{}'.format(cutoff)
-        n_past='all'
-        print(cutoff,out_t_step,'  SVR time......',use_t)
-        record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
-        ##### RF ################
+        # syn = start_syn+'SVR_m{}_t{}'.format(cutoff,str(out_t_step))
+        # trainPredict,testPredict,use_t = svr()
+        # use_time = use_t
+        # n_features = 'Mars{}'.format(cutoff)
+        # n_past='all'
+        # print(cutoff,out_t_step,'  SVR time......',use_t)
+        # record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+        # ##### RF ################
         
         syn = start_syn+'RF_m{}_t{}'.format(cutoff,str(out_t_step))
         trainPredict,testPredict,use_t = rf()

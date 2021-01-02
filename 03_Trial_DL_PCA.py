@@ -154,8 +154,58 @@ def run_code(model,batch_size,syn):
         y_test = scaler_tar.inverse_transform(y_test)
         testPredict = scaler_tar.inverse_transform(testPredict.reshape(y_test.shape))
     record_list_result(syn,df,'03_DL_PCA',y_train,y_test,trainPredict,testPredict,target,batch_size,save_path,n_past,n_features,n_future)
-
-
+#--------------------------------
+def build_ann():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    x = layers.Flatten()(input)
+    x = layers.Dense(200, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(100, activation='relu')(x)
+    x = layers.Dense(n_future)(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(optimizer='adam', loss='mse')  
+    plot_model(model, to_file=save_path+'modelANN_{}.png'.format(syn), show_shapes=True)  
+    model.summary()
+    return model
+def build_mod2_cnn1d():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(input)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.Conv1D(filters=64, kernel_size=2, activation='relu')(x)
+    x = layers.MaxPooling1D(pool_size=2)(x)
+    x = layers.Flatten()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.BatchNormalization()(x) # added
+    x = layers.Dense(1000, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(500)(x)
+    x = layers.Dense(200)(x)
+    x = layers.Dense(n_future)(x)
+    x = layers.LeakyReLU()(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(optimizer='adam', loss='mse')    
+    model.summary()
+    plot_model(model, to_file=save_path+'modelCNN_{}.png'.format(syn), show_shapes=True)
+    return model
+def build_lstm_v2():
+    global n_past,n_future,n_features
+    input = keras.Input(shape=(n_past, int(n_features)))
+    # x = layers.LSTM(200, activation='relu', input_shape=(n_past, n_features),return_sequences=False)(input)
+    x = layers.CuDNNLSTM(400)(input)
+    x = layers.BatchNormalization()(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(200, activation='relu')(x)
+    x = layers.Dropout(0.2)(x)
+    x = layers.Dense(n_future)(x)
+    model = keras.Model(inputs=[input], outputs=x)
+    model.compile(loss='mse', optimizer='adam')
+    model.summary()
+    plot_model(model, to_file=save_path+'modelLSTM_{}.png'.format(syn), show_shapes=True)
+    return model
 #------------------------- Main ---------------------------------#
 df = df[start_p:stop_p]
 data = df
@@ -203,7 +253,7 @@ X_train, _ = split_xy(sc_train,n_past,n_future)
 X_test, _ = split_xy(sc_test,n_past,n_future)
 
 ##----------- Run Experiment -----------------##
-for batch_size in [16,32]:
-    run_code(build_cnn1d(),batch_size,'CNN1D-MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    run_code(build_lstm(),batch_size,'CuDNNLSTM-MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
-    # run_code(build_ende_lstm(),batch_size,'AutoCuDNNLSTM_pca-minmax-MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+for batch_size in [16]:
+        run_code(build_ann(),batch_size,'pca_ANN_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+        run_code(build_mod2_cnn1d(),batch_size,'pca_dCNN(linear)_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
+        run_code(build_lstm_v2(),batch_size,'pca_CuDNNLSTM(big)_MAR{}_b{}_Tin{}_{}'.format(cutoff,batch_size,n_past,syn))
