@@ -30,10 +30,10 @@ elif mode =='day': n_past,n_future = 60,30
 split_date = '2016-11-01'
 syn='var'
 
-stop_p = '2015-06-01'
-split_date = '2015-05-01'
+#stop_p = '2015-06-01'
+#split_date = '2015-05-01'
 ##########################################
-save_path =host_path+'/VAR/'
+save_path =host_path+'/VAR_trial144/'
 import os
 if not os.path.exists(save_path):
     os.makedirs(save_path)
@@ -65,7 +65,7 @@ for t in tqdm(range(len(test))):
     history = pd.concat([train,test.iloc[:t,:]])
 
     mod = VAR(history)
-    result = mod.fit(maxlags=15,ic='aic')
+    result = mod.fit(maxlags=144,ic='aic')
 
     yhat = result.forecast(history.values,72)
     testPredict.append(yhat[:,0])
