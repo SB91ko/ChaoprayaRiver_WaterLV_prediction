@@ -48,7 +48,7 @@ def linear():
 def svr():
     global trainX,trainY,testX,testY,syn
     start_time = time.time()
-    svr = svm.SVR(kernel='linear',C=10000, gamma=0.0001)
+    svr = svm.SVR(kernel='rbf',C=10000, gamma=0.0001)
     
     if DOpca: steps = [('scale',StandardScaler()),('pca', PCA(n_components = n_pca)),  ('svr', svr)]
     else: steps = [('scale',StandardScaler()), ('svr', svr)]
@@ -152,23 +152,12 @@ target,start_p,stop_p,host_path=station_sel(st,mode)
 if mode =='hour': n_past,n_future = 24*6,72
 elif mode =='day': n_past,n_future = 60,30
 
-#host_path = './CPY012/2Yr_flood/'
-#start_p = '2016-01-01'
-#split_date = '2017-05-10'
-#stop_p = '2018-01-01'
-
 n_pca = 4
 split_date = '2016-11-01'
-# *********************2 Yr trail**********************
-# split_date = '2015-06-11'
-# stop_p = '2016/02/01'
-# n_pca = 6
-
 #----------------------------------------#
-save_path =host_path+'ML_SVR_opt_linear/'
+save_path =host_path+'ML_svr/'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
-
 ###########################################
 
 def call_data():
@@ -185,9 +174,8 @@ def call_data():
     data_mar = move_column_inplace(data_mar,target,0)
     return data_mar
 
-
+print('Working.......')
 # for i in range(1):
-
 #     start_syn=str(i)
 for out_t_step in (range(1,n_future+1)):    
     cutoff=0.3
@@ -197,28 +185,28 @@ for out_t_step in (range(1,n_future+1)):
     trainY, testY = Y[:split_date].dropna(),Y[split_date:].dropna()
     #### plot #####
     # if out_t_step==0: plot_corr(data,'mar{}'.format(cutoff))
-    DOpca=True
+    #DOpca=True
     ######################################
     # trainX, testX, trainY, testY = train_test_split(X, Y, test_size = 0.3, shuffle=False)
     # print(trainX.shape,trainY.shape,testX.shape,testY.shape)
-    ############ LINEAR ##################
-    #syn = start_syn+'linear_pca_m{}_t{}'.format(cutoff,str(out_t_step))
-    #trainPredict,testPredict,use_t = linear()
-    #use_time = use_t
-    #n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
-    #n_past='all'
-    #print(cutoff,out_t_step,'  LR time......',use_t)
-    #record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+    ########### LINEAR ##################
+    # syn = 'linear_pca_m{}_t{}'.format(cutoff,str(out_t_step))
+    # trainPredict,testPredict,use_t = linear()
+    # use_time = use_t
+    # n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
+    # n_past='all'
+    # print(cutoff,out_t_step,'  LR time......',use_t)
+    # record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
     
-    # ### SVR ################
+    # # # ### SVR ################
     
-    syn = 'SVR_pcam{}_t{}'.format(cutoff,str(out_t_step))
-    trainPredict,testPredict,use_t = svr()
-    use_time = use_t
-    n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
-    n_past='all'
-    print(cutoff,out_t_step,'  SVR time......',use_t)
-    record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+    # syn = 'SVR_pcam{}_t{}'.format(cutoff,str(out_t_step))
+    # trainPredict,testPredict,use_t = svr()
+    # use_time = use_t
+    # n_features = 'Mars{}_Pca_{}'.format(cutoff,n_pca)
+    # n_past='all'
+    # print(cutoff,out_t_step,'  SVR time......',use_t)
+    # record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
     # # ###### RF ################
     
     # syn = start_syn+'RF_pcam{}_t{}'.format(cutoff,str(out_t_step))
@@ -232,17 +220,17 @@ for out_t_step in (range(1,n_future+1)):
     # # #----------------------- no pca--------------------------------#
     # ###############################################################
     DOpca=False
-    # ############ LINEAR ##################
+    ########### LINEAR ##################
     
-    # # syn =start_syn+'linear_m{}_t{}'.format(cutoff,str(out_t_step))
-    # # trainPredict,testPredict,use_t = linear()
-    # # use_time = use_t
-    # # n_features = 'Mars{}'.format(cutoff)
-    # # n_past='all'
-    # # print(cutoff,out_t_step,'  LR time......',use_t)
-    # # record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+    # syn ='linear_m{}_t{}'.format(cutoff,str(out_t_step))
+    # trainPredict,testPredict,use_t = linear()
+    # use_time = use_t
+    # n_features = 'Mars{}'.format(cutoff)
+    # n_past='all'
+    # print(cutoff,out_t_step,'  LR time......',use_t)
+    # record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=False)
     
-    # # ### SVR ################
+    # # # ### SVR ################
     
     syn = 'SVR_m{}_t{}'.format(cutoff,str(out_t_step))
     trainPredict,testPredict,use_t = svr()
@@ -250,7 +238,7 @@ for out_t_step in (range(1,n_future+1)):
     n_features = 'Mars{}'.format(cutoff)
     n_past='all'
     print(cutoff,out_t_step,'  SVR time......',use_t)
-    record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1)
+    record_alone_result(syn,out_t_step,trainY,testY,trainPredict,testPredict,target,use_time,save_path,n_past,n_features,n_future=1,rec_result=True)
     ##### RF ################
     
     # syn = start_syn+'RF_m{}_t{}'.format(cutoff,str(out_t_step))

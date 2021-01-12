@@ -146,12 +146,16 @@ def record_list_result(syn,df,mode,trainY,testY,trainPredict,testPredict,target,
         Yhat_tr = pd.Series(data=(trainPredict[:,d].ravel()),index=df[:split_date].index[st_idx:len(trainY)+st_idx])        
         Y_t= pd.Series(data=testY[:,d],index=df[split_date:].index[st_idx:len(testY)+st_idx])
         Yhat_t = pd.Series(data=(testPredict[:,d].ravel()),index=df[split_date:].index[st_idx:len(testY)+st_idx])
+        
+        
 
         mse,nse,r2,rmse,mae = real_eva_error(Y_tr, Yhat_tr,)
         Tmse, Tnse,Tr2,Trmse,Tmae = real_eva_error(Y_t, Yhat_t,)
         #------------ Plot trian-test ------------------#
         syn_new = syn+'_t'+str(d+1)
-        if d in [0,11,23,47,71]: 
+        Yhat_t.to_csv(save_path+'/result{}.csv'.format(syn_new))
+
+        if d in [0,11,23,35,47,60,71]: 
             plotgraph(target,save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new) 
             plot_moonson_l(save_path,Y_tr,Y_t,Yhat_tr,Yhat_t,syn_new)
             plot_rsquare(save_path,Y_t,Yhat_t,syn_new)
@@ -219,6 +223,7 @@ def record_alone_result(syn,timestep,trainY,testY,trainPredict,testPredict,targe
         idx=idx.insert(0,'0')
         error.set_index(idx,inplace=True)
     error.T.to_csv(save_path+'/eval.csv',index=False)
+
 
     ##########################
     if rec_result: 

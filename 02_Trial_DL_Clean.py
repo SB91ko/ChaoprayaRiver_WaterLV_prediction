@@ -64,7 +64,7 @@ DLtype = '02_DL'
 Yscale = False
 allscale = True
 #-----------------###
-save_path =host_path+'Baseline_ori_2'
+save_path =host_path+'Baseline_allfeature_wResult'
 if not os.path.exists(save_path):
     os.makedirs(save_path)
 ##------------------------------------------------##
@@ -149,7 +149,6 @@ def build_lstm_v2():
     model.summary()
     plot_model(model, to_file=save_path+'modelLSTM_{}.png'.format(syn), show_shapes=True)
     return model
-
 def build_mod2_cnn1d():
     global n_past,n_future,n_features
     input = keras.Input(shape=(n_past, int(n_features)))
@@ -222,14 +221,14 @@ callback_early_stopping = EarlyStopping(monitor='val_loss',patience=10, verbose=
 reduce_lr = tf.keras.callbacks.LearningRateScheduler(lambda x: 1e-5 * 0.90 ** x)
 callbacks = [callback_early_stopping,reduce_lr]
 ##----------------- Main -----------------------------#
-
 df = df[start_p:stop_p]
 data = df
 data['Day'] = data.index.dayofyear #add day
 data = data.interpolate(limit=300000000,limit_direction='both').astype('float32')#interpolate neighbor first, for rest NA fill with mean() #.apply(lambda x: x.fillna(x.mean()),axis=0)
 
 cutoff=.3
-data_mar = call_mar(data,target,mode,cutoff=cutoff)
+#data_mar = call_mar(data,target,mode,cutoff=cutoff)
+data_mar=data
 # Move Y to first row
 data_mar = move_column_inplace(data_mar,target,0)
 n_features = len(data_mar.columns)

@@ -33,7 +33,7 @@ syn='var'
 #stop_p = '2015-06-01'
 #split_date = '2015-05-01'
 ##########################################
-save_path =host_path+'/VAR_trial144/'
+save_path =host_path+'/VAR_opt/'
 import os
 if not os.path.exists(save_path):
     os.makedirs(save_path)
@@ -65,7 +65,8 @@ for t in tqdm(range(len(test))):
     history = pd.concat([train,test.iloc[:t,:]])
 
     mod = VAR(history)
-    result = mod.fit(maxlags=144,ic='aic')
+    #result = mod.fit(maxlags=144,ic='aic')
+    result = mod.fit(87)
 
     yhat = result.forecast(history.values,72)
     testPredict.append(yhat[:,0])
